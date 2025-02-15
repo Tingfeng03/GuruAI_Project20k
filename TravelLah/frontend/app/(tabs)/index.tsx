@@ -11,7 +11,7 @@ export default function App(): JSX.Element {
     }
 
     try {
-      const response = await fetch('http:// 10.91.143.173:8080/api/messages', {
+      const response = await fetch('http://192.168.0.255:8080/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
