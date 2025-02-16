@@ -1,4 +1,3 @@
-import { LOCAL_FRONTEND_IP } from '@env';
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 
@@ -12,7 +11,8 @@ export default function App(): JSX.Element {
     }
 
     try {
-      const response = await fetch('http:// 10.91.143.173:8080/api/messages', {
+      console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
+      const response = await fetch(`http://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -35,6 +35,7 @@ export default function App(): JSX.Element {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>${process.env.LOCAL_FRONTEND_IP}</Text>
       <Text style={styles.title}>Send Message to Backend</Text>
       <TextInput
         style={styles.input}
