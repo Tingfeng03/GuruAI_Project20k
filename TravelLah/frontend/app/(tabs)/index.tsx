@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
+import { BASE_URL } from "@env";
 
 export default function App(): JSX.Element {
   const [message, setMessage] = useState<string>("");
@@ -9,9 +10,9 @@ export default function App(): JSX.Element {
       Alert.alert("Error", "Please enter a message.");
       return;
     }
-
     try {
-      const response = await fetch("http://192.168.0.102:8080/api/messages", {
+      const response = await fetch(`${BASE_URL}/api/messages`, {
+        // const response = await fetch("http://192.168.0.102:8080/api/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
