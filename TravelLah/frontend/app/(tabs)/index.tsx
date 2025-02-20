@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 
+
 export default function App(): JSX.Element {
   const [message, setMessage] = useState<string>('');
 
