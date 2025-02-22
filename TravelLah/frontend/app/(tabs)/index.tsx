@@ -1,24 +1,26 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
-import { BASE_URL } from "@env";
 
 export default function App(): JSX.Element {
   const [message, setMessage] = useState<string>("");
-
+  console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
   const handleSendMessage = async () => {
+    console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
     if (!message.trim()) {
       Alert.alert("Error", "Please enter a message.");
       return;
     }
     try {
-      console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
-      const response = await fetch(`http://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/messages`, {
-        method: 'POST',
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `http://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: message }),
         },
-        body: JSON.stringify({ content: message }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
