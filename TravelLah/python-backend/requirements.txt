@@ -97,3 +97,5 @@ SON
 PyPDF2
 langgraph
 motor
+fastapi
+uvicorn
