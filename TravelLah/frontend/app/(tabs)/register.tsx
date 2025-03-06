@@ -21,7 +21,8 @@ export default function RegisterScreen() {
     };
 
     try {
-      const response = await fetch("http://localhost:8080/api/user/register", {
+      console.log(payload);
+      const response = await fetch(`http://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/user/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -33,13 +34,26 @@ export default function RegisterScreen() {
         const errorText = await response.text();
         throw new Error(errorText || "Registration failed");
       }
-
-      const data = await response.text();
-      Alert.alert("Success", data);
-      router.push("/login");
-    } catch (error) {
+      if (response.ok) {
+        console.log("TEST");
+        Alert.alert(
+          "Registration Successful",
+          "You have successfully registered.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.push("/login"),
+            },
+          ]
+        );
+      }
+    } catch (error: unknown) {
       console.error("Registration failed:", error);
-      Alert.alert("Error", error.message);
+      let errorMessage = "Registration failed";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      Alert.alert("Error", errorMessage);
     }
   };
 

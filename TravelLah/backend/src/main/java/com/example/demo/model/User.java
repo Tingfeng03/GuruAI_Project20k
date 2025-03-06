@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import jakarta.validation.constraints.Pattern;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -8,10 +9,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class User {
 
     @Id
-    private int userId;
+    private String userId;
     private String username;
-    private String passwordHash;
+    private String email;
 
+    // This regex validates phone numbers that may start with a plus and have 10 to
+    // 13 digits.
+    @Pattern(regexp = "^[0-9]{8,13}$", message = "Invalid phone number")
+    private String phone;
+
+    private String passwordHash;
     private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public User() {
@@ -22,11 +29,11 @@ public class User {
         this.passwordHash = encoder.encode(plainTextPassword);
     }
 
-    public int getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
@@ -36,6 +43,25 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        if (phone != null && !phone.matches("^[0-9]{8,13}$")) {
+            throw new IllegalArgumentException("Invalid phone number");
+        }
+        this.phone = phone;
     }
 
     public String getPasswordHash() {
