@@ -1,16 +1,18 @@
+import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput, Button, Card, Title } from "react-native-paper";
-import { useState } from "react";
 import { useRouter } from "expo-router";
+import { useTheme } from "@react-navigation/native";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter(); // Add router for navigation
+  const router = useRouter();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
-      <Card style={styles.card}>
+      <Card style={[styles.card]}>
         <Card.Content>
           <Title>Login</Title>
           <TextInput
@@ -20,6 +22,7 @@ export default function LoginScreen() {
             mode="outlined"
             keyboardType="email-address"
             style={styles.input}
+            theme={{ colors: { text: colors.text, primary: colors.primary } }}
           />
           <TextInput
             label="Password"
@@ -28,17 +31,21 @@ export default function LoginScreen() {
             mode="outlined"
             secureTextEntry
             style={styles.input}
+            theme={{ colors: { text: colors.text, primary: colors.primary } }}
           />
           <Button
             mode="contained"
             onPress={() => console.log("Login clicked")}
             style={styles.button}
+            textColor ={colors.text}
           >
             Login
           </Button>
-
-          {/* Navigation buttons */}
-          <Button mode="text" onPress={() => router.push("/register")}>
+          <Button
+            mode="text"
+            onPress={() => router.push("/register")}
+            labelStyle={{ color: colors.primary }}
+          >
             Don't have an account? Register
           </Button>
         </Card.Content>
@@ -52,6 +59,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
+    backgroundColor: '#f0f0f0',
   },
   card: {
     padding: 20,

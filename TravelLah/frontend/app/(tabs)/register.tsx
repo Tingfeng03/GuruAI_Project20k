@@ -1,18 +1,20 @@
+import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput, Button, Card, Title } from "react-native-paper";
-import { useState } from "react";
 import { useRouter } from "expo-router";
+import { useTheme } from "@react-navigation/native";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter(); // Add router for navigation
+  const router = useRouter();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
-      <Card style={styles.card}>
+      <Card style={[styles.card]}>
         <Card.Content>
           <Title>Register</Title>
           <TextInput
@@ -22,6 +24,7 @@ export default function RegisterScreen() {
             mode="outlined"
             keyboardType="email-address"
             style={styles.input}
+            theme={{ colors: { text: colors.text, primary: colors.primary } }}
           />
           <TextInput
             label="Username"
@@ -29,6 +32,7 @@ export default function RegisterScreen() {
             onChangeText={setUsername}
             mode="outlined"
             style={styles.input}
+            theme={{ colors: { text: colors.text, primary: colors.primary } }}
           />
           <TextInput
             label="Phone Number"
@@ -37,6 +41,7 @@ export default function RegisterScreen() {
             mode="outlined"
             keyboardType="phone-pad"
             style={styles.input}
+            theme={{ colors: { text: colors.text, primary: colors.primary } }}
           />
           <TextInput
             label="Password"
@@ -45,17 +50,21 @@ export default function RegisterScreen() {
             mode="outlined"
             secureTextEntry
             style={styles.input}
+            theme={{ colors: { text: colors.text, primary: colors.primary } }}
           />
           <Button
             mode="contained"
             onPress={() => console.log("Register clicked")}
             style={styles.button}
+            textColor={colors.text}
           >
             Register
           </Button>
-
-          {/* Navigation buttons */}
-          <Button mode="text" onPress={() => router.push("/login")}>
+          <Button
+            mode="text"
+            onPress={() => router.push("/login")}
+            labelStyle={{ color: colors.primary }}
+          >
             Already have an account? Login
           </Button>
         </Card.Content>
@@ -69,6 +78,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
+    backgroundColor: '#f0f0f0',
   },
   card: {
     padding: 20,

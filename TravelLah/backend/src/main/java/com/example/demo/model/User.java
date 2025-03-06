@@ -4,26 +4,24 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-@Document(collection = "UserAccount")
-public class UserAccount {
+@Document(collection = "User")
+public class User {
 
     @Id
     private int userAccountId;
     private String username;
     private String passwordHash;
 
-    // A static BCryptPasswordEncoder instance for reuse
     private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    // Default constructor is required for JSON deserialization
-    public UserAccount() {}
+    public User() {
+    }
 
-    public UserAccount(String username, String plainTextPassword) {
+    public User(String username, String plainTextPassword) {
         this.username = username;
         this.passwordHash = encoder.encode(plainTextPassword);
     }
 
-    // Getters and Setters
     public int getUserAccountId() {
         return userAccountId;
     }
@@ -54,10 +52,10 @@ public class UserAccount {
 
     @Override
     public String toString() {
-        return "UserAccount{" +
-               "userAccountId=" + userAccountId +
-               ", username='" + username + '\'' +
-               ", passwordHash='" + passwordHash + '\'' +
-               '}';
+        return "User{" +
+                "userId=" + userAccountId +
+                ", username='" + username + '\'' +
+                ", passwordHash='" + passwordHash + '\'' +
+                '}';
     }
 }
