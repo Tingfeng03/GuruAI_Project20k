@@ -1,18 +1,16 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import "react-native-reanimated";
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import { Drawer } from 'expo-router/drawer';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import 'react-native-reanimated';
 
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from '@/hooks/useColorScheme';
+import HeaderNav from '@/components/HeaderNav';
+import { CustomDrawerContent } from '@/components/CustomDrawerContent';
+import { drawerRoutes } from '@/config/drawerRoutes';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -32,24 +30,21 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {/* Main App Tabs */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          header: () => <HeaderNav />,
+          drawerPosition: 'left',
+          drawerType: 'slide',
+        }}
+      >
+        {/* Register the screens you want in the drawer in /frontend/config/drawerRoutes.ts */}
 
-        {/* Authentication Screens */}
-        <Stack.Screen
-          name="login"
-          options={{ title: "Login", headerShown: true }}
-        />
-        <Stack.Screen
-          name="register"
-          options={{ title: "Register", headerShown: true }}
-        />
-
-        {/* Error Page */}
-        <Stack.Screen name="+not-found" />
-      </Stack>
+        {drawerRoutes.map((route) => (
+          <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
+        ))}
+      </Drawer>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
