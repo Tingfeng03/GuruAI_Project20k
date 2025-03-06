@@ -1,0 +1,47 @@
+// the initial Output
+{
+    "userId": "userID", // backend
+    "tripPlan": {
+        "tripSerialNo": "xxxx",
+        "TravelLocation": { // what country we going?
+            "longtitude": 6969.69,
+            "latitude": 22.22,
+            "locationName": "xxx"
+        },
+        "tripFlow": [
+            {
+                "<Date>":
+                    [
+                        {
+                            "datetime": "<DDMMYY HH:mm>",
+                            "specificNameOfLocation":"Marina Bay Sand",
+                            "Address": "cccccccc",
+                            "goingWhere":{"lat": 22.22, "long": 22.22},
+                            "WhatToDo":"<paragraph text>"
+                        },
+                        {
+                            "datetime": "<DDMMYY HH:mm>",
+                            "specificNameOfLocation":"Marina Bay Sand",
+                            "Address": "cccccccc",
+                            "goingWhere":{"lat": 22.22, "long": 22.22},
+                            "WhatToDo":"<paragraph text>"
+                        }
+                    ]
+                
+            },
+            {
+                "<Date>":
+                    [
+                        {
+                            "time": "Afternoon 12:00", 
+                            "goingWhere":{"lat": 22.22, "long": 22.22},
+                            "whatTimeToGo":"",
+                            "WhatToDo":""
+                        }
+                    ]
+                
+            }
+        ]
+    }
+
+}
