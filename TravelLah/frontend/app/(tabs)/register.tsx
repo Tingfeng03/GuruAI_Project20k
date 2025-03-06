@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { TextInput, Button, Card, Title } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { useTheme } from "@react-navigation/native";
@@ -11,6 +11,37 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const router = useRouter();
   const { colors } = useTheme();
+
+  const registerCall = async () => {
+    const payload = {
+      email,
+      username,
+      phone,
+      passwordHash: password,
+    };
+
+    try {
+      const response = await fetch("http://localhost:8080/api/user/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Registration failed");
+      }
+
+      const data = await response.text();
+      Alert.alert("Success", data);
+      router.push("/login");
+    } catch (error) {
+      console.error("Registration failed:", error);
+      Alert.alert("Error", error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -54,7 +85,7 @@ export default function RegisterScreen() {
           />
           <Button
             mode="contained"
-            onPress={() => console.log("Register clicked")}
+            onPress={registerCall}
             style={styles.button}
             textColor={colors.text}
           >
@@ -78,7 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   card: {
     padding: 20,

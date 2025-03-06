@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class User {
 
     @Id
-    private int userAccountId;
+    private int userId;
     private String username;
     private String passwordHash;
 
@@ -22,12 +22,12 @@ public class User {
         this.passwordHash = encoder.encode(plainTextPassword);
     }
 
-    public int getUserAccountId() {
-        return userAccountId;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setUserAccountId(int userAccountId) {
-        this.userAccountId = userAccountId;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     public String getUsername() {
@@ -53,7 +53,7 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "userId=" + userAccountId +
+                "userId=" + userId +
                 ", username='" + username + '\'' +
                 ", passwordHash='" + passwordHash + '\'' +
                 '}';
