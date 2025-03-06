@@ -10,7 +10,8 @@ This is the backend of the TravelLah application, built using Spring Boot and Mo
 
 ### Installing Apache Maven
 
-1. Download Apache Maven from the [official website](https://maven.apache.org/download.cgi).
+1. Download Apache Maven from the [official website](https://maven.apache.org/download.cgi).![image](https://github.com/user-attachments/assets/86b01608-d45a-4c9d-b990-558cff84ac04)
+
 2. Extract the downloaded archive to a directory of your choice.
 3. Add the `bin` directory of the extracted Maven folder to your system's `PATH` environment variable:
    - Copy the path to the `bin` folder of your Apache Maven installation.
