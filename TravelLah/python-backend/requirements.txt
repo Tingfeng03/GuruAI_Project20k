@@ -99,3 +99,7 @@ langgraph
 motor
 fastapi
 uvicorn
+
+langchain_google_genai
+tavily-python
+
