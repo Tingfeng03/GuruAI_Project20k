@@ -39,13 +39,8 @@ export default function RegisterScreen() {
         Alert.alert(
           "Registration Successful",
           "You have successfully registered.",
-          [
-            {
-              text: "OK",
-              onPress: () => router.push("/login"),
-            },
-          ]
         );
+        router.push("/login");
       }
     } catch (error: unknown) {
       console.error("Registration failed:", error);

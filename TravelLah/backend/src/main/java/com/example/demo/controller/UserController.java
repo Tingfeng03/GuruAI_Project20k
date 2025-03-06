@@ -21,7 +21,6 @@ public class UserController {
   @Autowired
   private UserRepository userRepository;
 
-  // Endpoint to register a new user
   @PostMapping("/register")
   public ResponseEntity<String> registerUser(@RequestBody User user) {
     logger.info("Registering user: {}", user);
@@ -36,27 +35,22 @@ public class UserController {
     return ResponseEntity.ok("User registered successfully with id: " + savedUser.getUserId());
   }
 
-  // Endpoint to log in a user
   @PostMapping("/login")
   public ResponseEntity<String> loginUser(@RequestBody User loginRequest) {
     logger.info("Login attempt for user: {}", loginRequest.getUsername());
 
-    // Fetch the user from the database by username
     Optional<User> optionalUser = userRepository.findByUsername(loginRequest.getUsername());
     if (!optionalUser.isPresent()) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
 
     User existingUser = optionalUser.get();
-    // Compare the provided plain text password with the stored hashed password
     if (!existingUser.checkPassword(loginRequest.getPasswordHash())) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
-
     return ResponseEntity.ok("User login successful for username: " + existingUser.getUsername());
   }
 
-  // Endpoint to retrieve all registered users
   @GetMapping
   public ResponseEntity<?> getAllUsers() {
     return ResponseEntity.ok(userRepository.findAll());
