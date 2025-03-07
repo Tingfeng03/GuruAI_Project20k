@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from typing import TypedDict, List
 from langchain_community.adapters.openai import convert_openai_messages
@@ -10,9 +11,10 @@ from tavily import TavilyClient
 from langgraph.checkpoint.sqlite import SqliteSaver
 from pydantic import BaseModel
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 load_dotenv(dotenv_path='.env')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-memory = SqliteSaver.from_conn_string(":memory:")
+TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 
 class AgentState(TypedDict):
     task: str
@@ -35,7 +37,8 @@ model = ChatGoogleGenerativeAI(
             google_api_key=GOOGLE_API_KEY
         )
 
-tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+tavily = TavilyClient(api_key=TAVILY_API_KEY)
+
 VACATION_PLANNING_SUPERVISOR_PROMPT="""You are the vacation planning supervisor. You have to give a detailed outline of what the planning agent \
 has to consider when planning the vacation according to the user input."""
 
@@ -63,6 +66,8 @@ class TravelAgentPlanner:
         self.tavily = tavily
 
     def build_dynamic_itinerary_query(self, itinerary_params: dict) -> str:
+        userId = itinerary_params.get("userId", "Unknown User")
+        tripId = itinerary_params.get("tripId", "Unknown Trip ID")
         destination = itinerary_params.get("destination", "Unknown Destination")
         num_days = itinerary_params.get("num_days", 1)
         dates = itinerary_params.get("dates", "Not specified")
@@ -75,6 +80,8 @@ class TravelAgentPlanner:
         notes = itinerary_params.get("notes", "")
         
         query_parts = [
+            f"User ID: {userId}",
+            f"Trip ID: {tripId}",
             f"Destination: {destination}",
             f"Number of Days: {num_days}",
             f"Travel Dates: {dates}",
@@ -91,27 +98,54 @@ class TravelAgentPlanner:
     
     def generate_refined_itinerary(self, query_text) -> str:
         persona = (
-            "You are an expert travel planner known for creating extremely well thought out, thorough, and personalized itineraries."
+            "You are an expert travel planner known for creating extremely well thought out, thorough, and personalized itineraries that follow a "
+            "logically sequenced, realistically timed and time-conscious schedule."
         )
         task = (
             "Analyze the following user input and produce two sections in your final output:\n"
-            "1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
-            "2. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Each day should have a header, a list of recommended activities, and notes."
+            #"1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
+            "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Each day should have a header, a list of recommended activities, and notes."
         )
+        # prompt to cater to output.json has not been constructed yet
+        # check with ting feng if the following restructuring is fine/does not necessitate alot of work on his part:
+        #{
+            #"userId": "userID", // backend
+            #"tripSerialNo": "xxxx",
+            #"TravelLocation": "location" // what country we going?
+            #"longtitude": 6969.69,
+            #"latitude": 22.22,
+        #}
         condition = (
-            "Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where " # fine tune and remove conditions (eg remove 24h format time, longitude, latitude etc)
-            "'itinerary' is a JSON array where each element is an object with the keys 'date','24 hour format time', "
-            "'specificNameOfLocation','address','longitude','latitude','activities','notes'."
+            #"Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where "
+            "Your final output must be valid JSON 'itinerary' it has the keys 'userId',"
+            "'tripSerialNo', 'TravelLocation', 'latitute', 'longitude' and 'tripFlow'. tripFlow' is a JSON array, with each element containing the keys"
+            " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys:'specific_location', " \
+            " 'address', 'latitude', 'longitude', 'start_time' and 'notes'."
         )
         context_prompt = (
-            "Include relevant local insights, destination-specific details, and tailored recommendations in your response."
+            "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response."
         )
+        format_condition = (
+            "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions."
+        )
+
+        # now address vs (long, lat) are max 3km away (except for the airport theres a very strange bug where the
+        # displacement between the two locations are clearly a few hundred metres apart, but the "proper routes" are 6km long)
+
+        # consider writing a safety measure for json parsing (function that checks all structures and keys are in tact
+        # reprompt if they are not)
         
-        sysmsg = f"{persona}\n{task}\n{context_prompt}\n{condition}"
+        sysmsg = f"{persona}\n{task}\n{context_prompt}\n{condition}\n{format_condition}"
         
         retrieval_context = ""
         tavily_response = self.tavily.search(query=query_text, max_results=2)
+        destination_info = []
         if tavily_response and "results" in tavily_response:
+            for r in tavily_response["results"]:
+                lat = r.get("latitude", "")
+                lng = r.get("longitude", "")
+                addr = r.get("address", "")
+                destination_info.append(f"Lat: {lat}, Long: {lng}, Address: {addr}")
             retrieval_context = "\n".join([r.get("content", "") for r in tavily_response["results"]])
         
         messages = [
@@ -141,7 +175,6 @@ def plan_node(state: AgentState):
 
     return {**state, "plan": response.content}
 
-
 def research_plan_node(state: AgentState):
     pastQueries = state.get('queries', [])
     answers = state.get('answers', [])
@@ -156,8 +189,13 @@ def research_plan_node(state: AgentState):
         pastQueries.append(q)
         response = tavily.search(query=q, max_results=2)
         for r in response['results']:
-            print("Tavily Response: " + r['content'])
-            answers.append(r['content'])
+            lat = r.get("latitude", "")
+            lng = r.get("longitude", "")
+            addr = r.get("address", "")
+            content = r.get("content", "")
+            combined_info = f"{content}\nLat: {lat}, Long: {lng}, Address: {addr}"
+            print("Tavily Response: " + combined_info)
+            answers.append(combined_info)
     print("**********************************************************")
     return {
         "queries": pastQueries,
@@ -179,7 +217,6 @@ def generation_node(state: AgentState):
     print("**********************************************************")
 
     return {**state, "draft": refined_itinerary, "revision_number": state.get("revision_number", 1) + 1}
-
 
 def reflection_node(state: AgentState):
     messages = [
@@ -207,8 +244,13 @@ def research_critique_node(state: AgentState):
         pastQueries.append(q)
         response = tavily.search(query=q, max_results=2)
         for r in response['results']:
-            print("Tavily Response: " + r['content'])
-            answers.append(r['content'])
+            lat = r.get("latitude", "")
+            lng = r.get("longitude", "")
+            addr = r.get("address", "")
+            content = r.get("content", "")
+            combined_info = f"{content}\nLat: {lat}, Long: {lng}, Address: {addr}"
+            print("Tavily Response: " + combined_info)
+            answers.append(combined_info)
     print("**********************************************************")       
     return {
         "queries": pastQueries,
@@ -238,30 +280,52 @@ builder.add_conditional_edges(
 
 builder.add_edge("planner", "research_plan")
 builder.add_edge("research_plan", "generate")
-
 builder.add_edge("reflect", "research_critique")
 builder.add_edge("research_critique", "generate")
 
-with SqliteSaver.from_conn_string(":memory:") as memory:
-    graph = builder.compile(checkpointer=memory)
-    thread = {"configurable": {"thread_id": "4"}}
-    output = []
-    streamOptions = {
-        'task': "Suggest me a fun, culturally immersive relaxed, 5 day trip to Hanoi, Vietnam",
-        "max_revisions": 3,
-        "revision_number": 1,
-        "itinerary_params": {
-            "destination": "Hanoi, Vietnam",
-            "num_days": 5,
-            "dates": "2025-0-01 to 2025-04-02",
-            "party_size": 4,
-            "num_rooms": 2,
-            "budget": "moderate",
-            "activities": "cultural tours, historical sites, local markets, local cuisines",
-            "food": "local-cuisine",
-            "pace": "relaxed",
-            "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
+def run_itinerary_flow(builder):
+    with SqliteSaver.from_conn_string(":memory:") as memory:
+        graph = builder.compile(checkpointer=memory)
+        thread = {"configurable": {"thread_id": "4"}}
+        output_states = []
+
+        stream_options = {
+            'task': "Suggest me a fun, culturally immersive relaxed, 5 day trip to Hanoi, Vietnam",
+            "max_revisions": 1,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
+            "revision_number": 1,
+            "itinerary_params": {
+                "userId": "U123",
+                "tripId": "T123",
+                "destination": "Hanoi, Vietnam",
+                "num_days": 5,
+                "dates": "2025-0-01 to 2025-04-02",
+                "party_size": 4,
+                "num_rooms": 2,
+                "budget": "moderate",
+                "activities": "cultural tours, historical sites, local markets, local cuisines",
+                "food": "local-cuisine",
+                "pace": "relaxed",
+                "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
+            }
         }
-    }
-    for s in graph.stream(streamOptions, thread):
-        output.append(s)
+
+        for state in graph.stream(stream_options, thread):
+            output_states.append(state)
+
+    # it does not always exit with generation node
+    ##################### WORK IN PROGRESS #####################
+    draft_states = [s for s in output_states if s.get("draft")]
+    if not draft_states:
+        raise ValueError("No state in output_states contains 'draft'.")
+    
+    final_state_with_draft = draft_states[-1]
+    
+    final_itinerary_raw = final_state_with_draft["draft"]
+    final_itinerary_json = json.loads(final_itinerary_raw)
+    ##################### WORK IN PROGRESS #####################
+    
+    return final_itinerary_json
+
+test_data = run_itinerary_flow(builder)
+print("Formatted JSON:")
+print(json.dumps(test_data, indent=4))
