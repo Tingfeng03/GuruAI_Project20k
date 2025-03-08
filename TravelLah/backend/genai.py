@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from typing import TypedDict, List
@@ -11,7 +12,6 @@ from tavily import TavilyClient
 from langgraph.checkpoint.sqlite import SqliteSaver
 from pydantic import BaseModel
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 load_dotenv(dotenv_path='.env')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
@@ -32,7 +32,7 @@ class Queries(BaseModel):
 
 model = ChatGoogleGenerativeAI(
             temperature=0,
-            model="gemini-1.5-pro",
+            model="gemini-1.5-flash", #gemini-1.5-flash, gemini-1.5-pro (I ran out of prompts for pro)
             convert_system_message_to_human=True,
             google_api_key=GOOGLE_API_KEY
         )
@@ -104,7 +104,8 @@ class TravelAgentPlanner:
         task = (
             "Analyze the following user input and produce two sections in your final output:\n"
             #"1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
-            "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Each day should have a header, a list of recommended activities, and notes."
+            "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Each day should have a header, a list of recommended activities"
+            " that covers 3 meals and 3 activities, and notes."
         )
         # prompt to cater to output.json has not been constructed yet
         # check with ting feng if the following restructuring is fine/does not necessitate alot of work on his part:
@@ -114,6 +115,9 @@ class TravelAgentPlanner:
             #"TravelLocation": "location" // what country we going?
             #"longtitude": 6969.69,
             #"latitude": 22.22,
+            #"tripFlow": {
+            #
+            #}
         #}
         condition = (
             #"Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where "
@@ -158,6 +162,7 @@ class TravelAgentPlanner:
         lc_messages = convert_openai_messages(messages)
         response = self.llm.invoke(lc_messages)
         logging.info("Raw LLM response (refined_itinerary): %s", response.content)
+
         return response.content
 
 travel_agent_planner = TravelAgentPlanner(model, tavily)
@@ -197,10 +202,8 @@ def research_plan_node(state: AgentState):
             print("Tavily Response: " + combined_info)
             answers.append(combined_info)
     print("**********************************************************")
-    return {
-        "queries": pastQueries,
-        "answers": answers
-        }
+
+    return {**state, "queries": pastQueries, "answers": answers}
 
 def generation_node(state: AgentState):
     itinerary_params = state.get("itinerary_params", {})
@@ -228,7 +231,8 @@ def reflection_node(state: AgentState):
     print("Critique: ")
     print(response.content)
     print("**********************************************************")
-    return {"critique": response.content}
+
+    return {**state, "critique": response.content}
 
 def research_critique_node(state: AgentState):
     pastQueries = state['queries'] or []
@@ -251,11 +255,9 @@ def research_critique_node(state: AgentState):
             combined_info = f"{content}\nLat: {lat}, Long: {lng}, Address: {addr}"
             print("Tavily Response: " + combined_info)
             answers.append(combined_info)
-    print("**********************************************************")       
-    return {
-        "queries": pastQueries,
-        "answers": answers
-        }
+    print("**********************************************************")  
+
+    return {**state, "queries": pastQueries,"answers": answers}
 
 def should_continue(state):
     if state["revision_number"] > state["max_revisions"]:
@@ -310,21 +312,29 @@ def run_itinerary_flow(builder):
         }
 
         for state in graph.stream(stream_options, thread):
+            if(state.get('generate') and state.get('generate').get("draft")):
+                draft_str = state.get('generate').get("draft")
+                if draft_str:
+                    draft_str = draft_str.strip()
+                    draft_str = re.sub(r'^```json\s*', '', draft_str)
+                    draft_str = re.sub(r'```$', '', draft_str)
+                    draft_str = draft_str.strip()
+
+                    try:
+                        draft_json = json.loads(draft_str)
+                        final_draft_dict = draft_json
+                        print("Parsed draft itinerary successfully!")
+                    except json.JSONDecodeError as e:
+                        print("Error parsing the draft as JSON:", e)
+
             output_states.append(state)
 
-    # it does not always exit with generation node
-    ##################### WORK IN PROGRESS #####################
-    draft_states = [s for s in output_states if s.get("draft")]
-    if not draft_states:
-        raise ValueError("No state in output_states contains 'draft'.")
-    
-    final_state_with_draft = draft_states[-1]
-    
-    final_itinerary_raw = final_state_with_draft["draft"]
-    final_itinerary_json = json.loads(final_itinerary_raw)
-    ##################### WORK IN PROGRESS #####################
-    
-    return final_itinerary_json
+    if not final_draft_dict:
+        raise ValueError("Final draft itinerary not found in any state.")
+
+    print("Final draft itinerary (dict):", final_draft_dict)
+    return final_draft_dict
+
 
 test_data = run_itinerary_flow(builder)
 print("Formatted JSON:")
