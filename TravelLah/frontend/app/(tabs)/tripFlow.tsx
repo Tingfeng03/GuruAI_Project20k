@@ -1,7 +1,8 @@
 import React from "react";
 import {View, StyleSheet} from "react-native";
-import {Avatar, Button, Card, Text} from "react-native-paper";
+import {Card, Text} from "react-native-paper";
 import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
+import { useRoute } from '@react-navigation/native';
 
 interface CardProps {
     trip : {
@@ -26,11 +27,14 @@ const getMapImageURL = (lat: number, long: number) => {
 
 const TripFlow: React.FC = () => {
     const [data, setdata] = React.useState<TripFlow[]>([]);
+    const route = useRoute();
+    const { serialNo } = route.params;
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("https://your-backend-api.com/location");
+                // TODO: replace with actual backend API
+                const response = await fetch(`https://your-backend-api.com/location/${serialNo}`);
                 const data: TripFlow[] = await response.json();
                 setdata(data);
             } catch (error) {
@@ -38,11 +42,12 @@ const TripFlow: React.FC = () => {
             } 
         };
         fetchData();
-    }, []); // this empty array ensures useEffect only run once, since we provide empty dependency
+    }, [serialNo]); 
 
     return (
         // consider using FlatList if more than 20 items
         <View style={styles.container}>
+            <Text style={styles.title}>Your Plan Trip</Text>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {data.map((tripflow: TripFlow, index) => 
                     tripflow.cards.map((card: CardProps, cardIndex) => {
