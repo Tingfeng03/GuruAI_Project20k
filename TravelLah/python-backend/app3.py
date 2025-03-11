@@ -102,43 +102,24 @@ class TravelAgentPlanner:
             "logically sequenced, realistically timed and time-conscious schedule."
         )
         task = (
-            "Analyze the following user input and produce two sections in your final output:\n"
-            #"1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
-            "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Each day should have a header, a list of recommended activities"
-            " that covers 3 meals and 3 activities, and notes."
+            "Analyze the following user input and produce a final itinerary. The itinerary must be detailed and organized day-by-day. "
+            "Each day should include a header, and for that day provide a list of recommended activities that covers 3 meals and 3 activities. "
+            "For each activity, include the start time, end time, and specify if it is an 'indoor' or 'outdoor' activity. Also include any relevant notes."
         )
-        # prompt to cater to output.json has not been constructed yet
-        # check with ting feng if the following restructuring is fine/does not necessitate alot of work on his part:
-        #{
-            #"userId": "userID", // backend
-            #"tripSerialNo": "xxxx",
-            #"TravelLocation": "location" // what country we going?
-            #"longtitude": 6969.69,
-            #"latitude": 22.22,
-            #"tripFlow": {
-            #
-            #}
-        #}
+        # Updated condition to enforce concrete values for all attributes
         condition = (
-            #"Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where "
-            "Your final output must be valid JSON 'itinerary' it has the keys 'userId',"
-            "'tripSerialNo', 'TravelLocation', 'latitute', 'longitude' and 'tripFlow'. tripFlow' is a JSON array, with each element containing the keys"
-            " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys:'specific_location', " \
-            " 'address', 'latitude', 'longitude', 'start_time' and 'notes'."
+            "Your final output must be valid JSON with exactly one key: 'itinerary'. The 'itinerary' object must have the keys 'userId', "
+            "'tripSerialNo', 'TravelLocation', 'latitude', 'longitude', and 'tripFlow'. 'tripFlow' is a JSON array, with each element being an object containing the keys "
+            "'date' and 'activity content'. 'activity content' is a JSON array where each element must include the keys: 'specific_location', "
+            "'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type', and 'notes'. You must provide a concrete, non-placeholder value for every attribute based on available data or best estimates. Do not use placeholder text such as 'To be specified' or similar wording. 'activity_type' should only have the values 'indoor' or 'outdoor'."
         )
         context_prompt = (
-            "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response."
+            "Include relevant local insights, destination-specific details, and tailored recommendations in your response."
         )
         format_condition = (
             "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions."
         )
 
-        # now address vs (long, lat) are max 3km away (except for the airport theres a very strange bug where the
-        # displacement between the two locations are clearly a few hundred metres apart, but the "proper routes" are 6km long)
-
-        # consider writing a safety measure for json parsing (function that checks all structures and keys are in tact
-        # reprompt if they are not)
-        
         sysmsg = f"{persona}\n{task}\n{context_prompt}\n{condition}\n{format_condition}"
         
         retrieval_context = ""
@@ -164,6 +145,8 @@ class TravelAgentPlanner:
         logging.info("Raw LLM response (refined_itinerary): %s", response.content)
 
         return response.content
+
+
 
 travel_agent_planner = TravelAgentPlanner(model, tavily)
 
@@ -285,31 +268,31 @@ builder.add_edge("research_plan", "generate")
 builder.add_edge("reflect", "research_critique")
 builder.add_edge("research_critique", "generate")
 
-def run_itinerary_flow(builder):
+def run_itinerary_flow( stream_options):
     # with SqliteSaver.from_conn_string(":memory:") as memory:
     graph = builder.compile()
     thread = {"configurable": {"thread_id": "4"}}
     output_states = []
 
-    stream_options = {
-        'task': "Suggest me a fun, culturally immersive relaxed, 5 day trip to Hanoi, Vietnam",
-        "max_revisions": 1,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
-        "revision_number": 1,
-        "itinerary_params": {
-            "userId": "U123",
-            "tripId": "T123",
-            "destination": "Hanoi, Vietnam",
-            "num_days": 5,
-            "dates": "2025-0-01 to 2025-04-02",
-            "party_size": 4,
-            "num_rooms": 2,
-            "budget": "moderate",
-            "activities": "cultural tours, historical sites, local markets, local cuisines",
-            "food": "local-cuisine",
-            "pace": "relaxed",
-            "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
-        }
-    }
+    # stream_options = {
+    #     'task': "Suggest me a fun, culturally immersive relaxed, 5 day trip to Hanoi, Vietnam",
+    #     "max_revisions": 1,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
+    #     "revision_number": 1,
+    #     "itinerary_params": {
+    #         "userId": "U123",
+    #         "tripId": "T123",
+    #         "destination": "Hanoi, Vietnam",
+    #         "num_days": 7,
+    #         "dates": "2025-0-01 to 2025-04-02",
+    #         "party_size": 4,
+    #         "num_rooms": 2,
+    #         "budget": "moderate",
+    #         "activities": "cultural tours, historical sites, local markets, local cuisines",
+    #         "food": "local-cuisine",
+    #         "pace": "relaxed",
+    #         "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
+    #     }
+    # }
 
     for state in graph.stream(stream_options, thread):
         if(state.get('generate') and state.get('generate').get("draft")):
@@ -332,10 +315,65 @@ def run_itinerary_flow(builder):
     if not final_draft_dict:
         raise ValueError("Final draft itinerary not found in any state.")
 
-    print("Final draft itinerary (dict):", final_draft_dict)
+    #print("Final draft itinerary (dict):", final_draft_dict)
+    print("Formatted JSON:")
+    print(json.dumps(final_draft_dict, indent=4))
     return final_draft_dict
 
 
-test_data = run_itinerary_flow(builder)
-print("Formatted JSON:")
-print(json.dumps(test_data, indent=4))
+# test_data = run_itinerary_flow(builder)
+# print("Formatted JSON:")
+# print(json.dumps(test_data, indent=4))
+
+
+
+
+from typing import Dict, Any
+class StreamOptions(BaseModel):
+    task: str
+    max_revisions: int
+    revision_number: int
+    itinerary_params: Dict[str, Any]
+
+
+
+
+from fastapi import FastAPI,APIRouter,  HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+app = FastAPI()
+router = APIRouter() 
+origins = [
+    "http://localhost:3000",
+    "localhost:3000"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
+
+
+@app.post("/itinerary")
+async def create_itinerary(options: StreamOptions):
+    stream_options = options.model_dump()
+    try:
+        itinerary = run_itinerary_flow(stream_options)
+        return itinerary
+    except Exception as e:
+        raise HTTPException (status_code=400, detail=str(e))
+
+
+
+# Root endpoint for testing.
+@app.get("/")
+async def read_root():
+    return {"message": "FastAPI backend "}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
