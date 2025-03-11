@@ -131,7 +131,8 @@ class TravelAgentPlanner:
             "already been satisfied, explore other variety of activities."
         )
         format_condition = (
-            "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions. All days must abide by the format provided, no omissions."
+            "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions. All days must abide by the format provided, no omissions." \
+            "All JSON structures and elements in the JSON array must be filled. No texts are allowed outside of any JSON structures"
         )
 
         # now address vs (long, lat) are max 3km away (except for the airport theres a very strange bug where the
@@ -299,9 +300,9 @@ def run_itinerary_flow(builder):
             "itinerary_params": {
                 "userId": "U123",
                 "tripId": "T123",
-                "destination": "France",
-                "num_days": 5,
-                "dates": "2025-04-01 to 2025-04-05",
+                "destination": "Vietnam",
+                "num_days": 7,
+                "dates": "2025-04-01 to 2025-04-07",
                 "party_size": 4,
                 "num_rooms": 2,
                 "budget": "moderate",
@@ -311,7 +312,7 @@ def run_itinerary_flow(builder):
                 "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
             },
             "task": "Suggest a {pace}, {num_days} day trip to {destination} with {budget} budget. {party_size} people are going on the trip, splitting into {num_rooms} rooms. {notes}",
-            "max_revisions": 2,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
+            "max_revisions": 1,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
             "revision_number": 1
         }
 
