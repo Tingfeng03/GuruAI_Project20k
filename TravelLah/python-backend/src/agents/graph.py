@@ -90,6 +90,7 @@ class ItineraryWorkflow:
             raise ValueError(error_msg)
         
         logger.info("Itinerary workflow completed successfully")
+        # logger.info(type(final_draft_dict))
         return final_draft_dict
 
 # Initialize workflow

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..agents.graph import itinerary_workflow
 from .schemas import ItineraryResponse, StreamOptions
 from src.settings.logging import app_logger
+from ..services.mongoDB import mongoDB
 
 app = FastAPI(
     title="Travel Agent API", description="API for generating travel itineraries"
@@ -37,6 +38,12 @@ async def create_itinerary(options: StreamOptions):
         itinerary = itinerary_workflow.run(stream_options)
         
         app_logger.info("Successfully generated itinerary")
+        if mongoDB.insert(itinerary):
+            app_logger.info("Inserted itinerary into MongoDB")
+        else:
+            app_logger.error("Failed to insert itinerary into MongoDB")
+
+        app_logger.info("Returning itinerary")
         return itinerary
     except Exception as e:
         error_msg = f"Error generating itinerary: {str(e)}"
