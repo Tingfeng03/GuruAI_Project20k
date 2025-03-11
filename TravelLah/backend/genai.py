@@ -32,7 +32,7 @@ class Queries(BaseModel):
 
 model = ChatGoogleGenerativeAI(
             temperature=0,
-            model="gemini-1.5-flash", #gemini-1.5-flash, gemini-1.5-pro (I ran out of prompts for pro)
+            model="gemini-1.5-pro", #gemini-1.5-flash, gemini-1.5-pro (I ran out of prompts for pro)
             convert_system_message_to_human=True,
             google_api_key=GOOGLE_API_KEY
         )
@@ -98,13 +98,13 @@ class TravelAgentPlanner:
     
     def generate_refined_itinerary(self, query_text) -> str:
         persona = (
-            "You are an expert travel planner known for creating extremely well thought out, thorough, and personalized itineraries that follow a "
+            "You are an expert travel planner known for creating extremely well thought out, detailed, and personalized itineraries that follow a "
             "logically sequenced, realistically timed and time-conscious schedule."
         )
         task = (
             "Analyze the following user input and produce two sections in your final output:\n"
             #"1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
-            "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Each day should have a header, a list of recommended activities"
+            "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Every single day should have a header, a list of recommended activities"
             " that covers 3 meals and 3 activities, and notes."
         )
         # prompt to cater to output.json has not been constructed yet
@@ -124,13 +124,14 @@ class TravelAgentPlanner:
             "Your final output must be valid JSON 'itinerary' it has the keys 'userId',"
             "'tripSerialNo', 'TravelLocation', 'latitute', 'longitude' and 'tripFlow'. tripFlow' is a JSON array, with each element containing the keys"
             " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys:'specific_location', " \
-            " 'address', 'latitude', 'longitude', 'start_time' and 'notes'."
+            " 'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type' and 'notes'. 'activity_type' is a either 'indoor' or 'outdoor'."
         )
         context_prompt = (
-            "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response."
+            "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response. If the desired list of activities from the user has" \
+            "already been satisfied, explore other variety of activities."
         )
         format_condition = (
-            "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions."
+            "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions. All days must abide by the format provided, no omissions."
         )
 
         # now address vs (long, lat) are max 3km away (except for the airport theres a very strange bug where the
@@ -177,6 +178,7 @@ def plan_node(state: AgentState):
     print("Plan: ")
     print(response.content)
     print("**********************************************************")
+    state["plan"] = response.content
 
     return {**state, "plan": response.content}
 
@@ -286,21 +288,20 @@ builder.add_edge("reflect", "research_critique")
 builder.add_edge("research_critique", "generate")
 
 def run_itinerary_flow(builder):
+    final_draft_dict = None
+
     with SqliteSaver.from_conn_string(":memory:") as memory:
         graph = builder.compile(checkpointer=memory)
         thread = {"configurable": {"thread_id": "4"}}
         output_states = []
 
         stream_options = {
-            'task': "Suggest me a fun, culturally immersive relaxed, 5 day trip to Hanoi, Vietnam",
-            "max_revisions": 1,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
-            "revision_number": 1,
             "itinerary_params": {
                 "userId": "U123",
                 "tripId": "T123",
-                "destination": "Hanoi, Vietnam",
+                "destination": "France",
                 "num_days": 5,
-                "dates": "2025-0-01 to 2025-04-02",
+                "dates": "2025-04-01 to 2025-04-05",
                 "party_size": 4,
                 "num_rooms": 2,
                 "budget": "moderate",
@@ -308,8 +309,15 @@ def run_itinerary_flow(builder):
                 "food": "local-cuisine",
                 "pace": "relaxed",
                 "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
-            }
+            },
+            "task": "Suggest a {pace}, {num_days} day trip to {destination} with {budget} budget. {party_size} people are going on the trip, splitting into {num_rooms} rooms. {notes}",
+            "max_revisions": 2,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
+            "revision_number": 1
         }
+
+        itinerary_params = stream_options["itinerary_params"]
+        stream_options["task"] = stream_options["task"].format(**itinerary_params)
+
 
         for state in graph.stream(stream_options, thread):
             if(state.get('generate') and state.get('generate').get("draft")):
@@ -338,4 +346,4 @@ def run_itinerary_flow(builder):
 
 test_data = run_itinerary_flow(builder)
 print("Formatted JSON:")
-print(json.dumps(test_data, indent=4))
+print(json.dumps(test_data, indent=4, ensure_ascii=False))
