@@ -12,6 +12,15 @@ from tavily import TavilyClient
 from langgraph.checkpoint.sqlite import SqliteSaver
 from pydantic import BaseModel
 
+
+#TODO Fix problem where there are some activities that end late despite it being only the 3rd indexed activity for the day, the remaining activity slots
+# are then filled with N/A
+'''
+Future Considerations:
+1. More robust methods of dealing with unreasonable requests eg asking for a >= 7 day itinerary for a visit to a very small town
+'''
+
+
 load_dotenv(dotenv_path='.env')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
@@ -94,6 +103,7 @@ class TravelAgentPlanner:
             f"Notes: {notes}"
         ]
         query = " | ".join(query_parts)
+        
         return query
     
     def generate_refined_itinerary(self, query_text) -> str:
@@ -102,29 +112,21 @@ class TravelAgentPlanner:
             "logically sequenced, realistically timed and time-conscious schedule."
         )
         task = (
-            "Analyze the following user input and produce two sections in your final output:\n"
+            "Analyze the following user input and produce the following section in your final output:\n"
             #"1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
             "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Every single day should have a header, a list of recommended activities"
             " that covers 3 meals and 3 activities, and notes."
         )
-        # prompt to cater to output.json has not been constructed yet
-        # check with ting feng if the following restructuring is fine/does not necessitate alot of work on his part:
-        #{
-            #"userId": "userID", // backend
-            #"tripSerialNo": "xxxx",
-            #"TravelLocation": "location" // what country we going?
-            #"longtitude": 6969.69,
-            #"latitude": 22.22,
-            #"tripFlow": {
-            #
-            #}
-        #}
         condition = (
             #"Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where "
             "Your final output must be valid JSON 'itinerary' it has the keys 'userId',"
-            "'tripSerialNo', 'TravelLocation', 'latitute', 'longitude' and 'tripFlow'. tripFlow' is a JSON array, with each element containing the keys"
-            " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys:'specific_location', " \
-            " 'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type' and 'notes'. 'activity_type' is a either 'indoor' or 'outdoor'."
+            "'tripSerialNo', 'TravelLocation', 'latitute', 'longitude', 'start-date', 'end-date' and 'tripFlow'."
+        )
+        activity_context = (
+            " tripFlow' is a JSON array, with each element containing the keys"
+            " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys: 'activityId', 'specific_location', " \
+            " 'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type' and 'notes'. 'activityId' is an integer and corresponds to the activity's index in that day's JSON array"
+            " and 'activity_type' is a either 'indoor' or 'outdoor'."
         )
         context_prompt = (
             "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response. If the desired list of activities from the user has" \
@@ -132,16 +134,16 @@ class TravelAgentPlanner:
         )
         format_condition = (
             "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions. All days must abide by the format provided, no omissions." \
-            "All JSON structures and elements in the JSON array must be filled. No texts are allowed outside of any JSON structures"
+            "All JSON structures and elements in the JSON array must be filled. No texts are allowed outside of any JSON structures." \
+            "All JSON structures must not have duplicate keys."
         )
 
-        # now address vs (long, lat) are max 3km away (except for the airport theres a very strange bug where the
-        # displacement between the two locations are clearly a few hundred metres apart, but the "proper routes" are 6km long)
+        #TODO consider improving (lat, long) --> address correspondence accuracy (it is quite bad for less developed areas of vietnam for eg)
 
-        # consider writing a safety measure for json parsing (function that checks all structures and keys are in tact
+        #TODO consider writing a safety measure for json parsing (function that checks all structures and keys are in tact
         # reprompt if they are not)
         
-        sysmsg = f"{persona}\n{task}\n{context_prompt}\n{condition}\n{format_condition}"
+        sysmsg = f"{persona}\n{task}\n{context_prompt}\n{condition}\n{activity_context}\n{format_condition}"
         
         retrieval_context = ""
         tavily_response = self.tavily.search(query=query_text, max_results=2)
