@@ -1,7 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
+import { View, Text, TextInput, Button, Alert, StyleSheet, Dimensions, ScrollView } from "react-native";
+import {Appbar, Searchbar, Text} from 'react-native-paper';
+import CarouselItem from "../../components/CarouselItem";
 
-export default function App(): JSX.Element {
+export default function HomeScreen() {
+// export default function App(): JSX.Element {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const onChangeSearch = (query: string) => setSearchQuery(query);
   const [message, setMessage] = useState<string>("");
   console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
   const handleSendMessage = async () => {
@@ -10,6 +15,7 @@ export default function App(): JSX.Element {
       Alert.alert("Error", "Please enter a message.");
       return;
     }
+  
     try {
       const response = await fetch(
         `http://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/messages`,
@@ -27,51 +33,34 @@ export default function App(): JSX.Element {
       }
 
       const data = await response.text();
-
-      // Handle both JSON and plain text responses
-      Alert.alert("Success", data);
-      setMessage("");
-    } catch (error: any) {
-      console.error("Error sending message:", error);
-      Alert.alert("Error", error.message || "Failed to send message.");
+    const renderCarouselItem = ({item}: {item: {title: string; url: string} }) => {
+      return <CarouselItem title={item.title} url={item.url} />;
     }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>${process.env.LOCAL_FRONTEND_IP}</Text>
-      <Text style={styles.title}>Send Message to Backend</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your message"
-        value={message}
-        onChangeText={setMessage}
-      />
-      <Button title="Send Message" onPress={handleSendMessage} />
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}> 
+                <Searchbar 
+                    placeholder='Where would you like to go?'
+                    onChangeText={onChangeSearch}
+                    value={searchQuery}
+                    style={styles.searchbar}
+                />
+            </ScrollView>
+        </View>
+    )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#f0f0f0",
-  },
-  title: {
-    fontSize: 20,
-    marginBottom: 20,
-    fontWeight: "bold",
-  },
-  input: {
-    width: "100%",
-    padding: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#333",
-    borderRadius: 5,
-    backgroundColor: "#fff",
-  },
+    container: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    scrollContent: {
+      paddingHorizontal: 16,
+      paddingTop: 16,
+    },
+    searchbar: {
+      marginBottom: 16,
+    },
 });
+
