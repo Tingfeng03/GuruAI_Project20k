@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from src.agents.graph import ItineraryWorkflow
-from api.schemas import ItineraryResponse, StreamOptions
+from ..agents.graph import itinerary_workflow
+from .schemas import ItineraryResponse, StreamOptions
 from src.settings.logging import app_logger
 
 app = FastAPI(
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/itinerary", response_model=ItineraryResponse)
+@app.post("/itinerary")
 async def create_itinerary(options: StreamOptions):
     """
     Generate a travel itinerary based on the provided options
@@ -34,7 +34,7 @@ async def create_itinerary(options: StreamOptions):
         stream_options = options.model_dump()
         
         # Run the itinerary workflow
-        itinerary = ItineraryWorkflow.run(stream_options)
+        itinerary = itinerary_workflow.run(stream_options)
         
         app_logger.info("Successfully generated itinerary")
         return itinerary

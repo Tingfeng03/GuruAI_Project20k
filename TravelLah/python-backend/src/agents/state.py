@@ -12,7 +12,3 @@ class AgentState(TypedDict):
     revision_number: int
     max_revisions: int
     itinerary_params: Dict[str, Any]
-
-class Queries(BaseModel):
-    """Pydantic model for structured output of search queries"""
-    queries: List[str]

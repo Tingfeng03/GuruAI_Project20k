@@ -1,156 +1,180 @@
-from typing import Dict, Any
-from .state import AgentState, Queries
-from services.llm import LLMService
-from services.tavilySearch import SearchService
-from services.itinerary import ItineraryService
-from prompts.templates import PlannerPrompts
-from settings.logging import setup_logger
-from langchain_core.messages import SystemMessage, HumanMessage
-from langgraph.graph import END
+from src.agents.state import AgentState
+from src.services.llm import llm_service, Queries
+from src.services.tavilySearch import search_service
+from src.services.itinerary import planner_service
+from src.prompts.templates import PlannerPrompts
+from src.settings.logging import app_logger as logger
+from langchain_core.messages import HumanMessage, SystemMessage
 
-# Set up logger
-logger = setup_logger("agents.nodes")
 
-class AgentNodes:
-    """Node functions for the travel planning agent workflow"""
+def plan_node(state: AgentState) -> AgentState:
+    """
+    Node that generates the initial vacation plan
     
-    def __init__(self, llm_service: LLMService, search_service: SearchService, itinerary_service: ItineraryService):
-        self.llm = llm_service
-        self.search = search_service
-        self.itinerary = itinerary_service
+    Args:
+        state: Current state of the agent
+        
+    Returns:
+        Updated state with plan
+    """
+    logger.info("Executing plan_node")
+    messages = [
+        SystemMessage(content=PlannerPrompts.VACATION_PLANNING_SUPERVISOR),
+        HumanMessage(content=state['task'])
+    ]
     
-    def plan_node(self, state: AgentState) -> AgentState:
-        logger.info("Running plan node")
-        messages = [
-            SystemMessage(content=PlannerPrompts.VACATION_PLANNING_SUPERVISOR), 
-            HumanMessage(content=state['task'])
+    response = llm_service.model.invoke(messages)
+    print("**********************************************************")
+    print("Plan: ")
+    print(response.content)
+    print("**********************************************************")
+    logger.info("Generated vacation plan")
+    return {**state, "plan": response.content}
+
+def research_plan_node(state: AgentState) -> AgentState:
+    """
+    Node that researches the vacation plan
+    
+    Args:
+        state: Current state of the agent
+        
+    Returns:
+        Updated state with queries and answers
+    """
+    logger.info("Executing research_plan_node")
+    pastQueries = state.get('queries', [])
+    answers = state.get('answers', [])
+    queries = llm_service.model.with_structured_output(Queries).invoke([
+        SystemMessage(content=PlannerPrompts.PLANNER_ASSISTANT),
+        HumanMessage(content=state['plan'])
+    ])
+    print("**********************************************************")
+    print("Queries and Response: ")
+    for q in queries.queries:
+        print("Query: " + q)
+        pastQueries.append(q)
+        response = search_service.client.search(query=q, max_results=2)
+        for r in response['results']:
+            lat = r.get("latitude", "")
+            lng = r.get("longitude", "")
+            addr = r.get("address", "")
+            content = r.get("content", "")
+            combined_info = f"{content}\nLat: {lat}, Long: {lng}, Address: {addr}"
+            print("Tavily Response: " + combined_info)
+            answers.append(combined_info)
+    print("**********************************************************")
+    return {**state, "queries": pastQueries, "answers": answers}
+    
+
+def generation_node(state: AgentState) -> AgentState:
+    """
+    Node that generates the itinerary
+    
+    Args:
+        state: Current state of the agent
+        
+    Returns:
+        Updated state with draft and incremented revision number
+    """
+    logger.info("Executing generation_node")
+    itinerary_params = state.get("itinerary_params", {})
+    
+    # Build query and generate itinerary
+    dynamic_query = planner_service.build_dynamic_itinerary_query(itinerary_params)
+    refined_itinerary = planner_service.generate_refined_itinerary(dynamic_query)
+    
+    # Update state
+    print("**********************************************************")
+    print("Dynamic Itinerary Query: ")
+    print(dynamic_query)
+    print("**********************************************************")
+    print("Refined Itinerary: ")
+    print(refined_itinerary)
+    print("**********************************************************")
+    return {
+        **state,
+        "draft": refined_itinerary,
+        "revision_number": state.get("revision_number", 1) + 1,
+    }
+
+
+def reflection_node(state: AgentState) -> AgentState:
+    """
+    Node that critiques the generated itinerary
+    
+    Args:
+        state: Current state of the agent
+        
+    Returns:
+        Updated state with critique
+    """
+    logger.info("Executing reflection_node")
+    messages = [
+        SystemMessage(content=PlannerPrompts.PLANNER_CRITIQUE),
+        HumanMessage(content=state["draft"]),
+    ]
+    response = llm_service.model.invoke(messages)
+    print("**********************************************************")
+    print("Critique: ")
+    print(response.content)
+    print("**********************************************************")
+    return {**state, "critique": response.content}
+
+def research_critique_node(state: AgentState) -> AgentState:
+    """
+    Node that researches based on the critique
+    
+    Args:
+        state: Current state of the agent
+        
+    Returns:
+        Updated state with queries and answers
+    """
+    logger.info("Executing research_critique_node")
+    pastQueries = state.get("queries", [])
+    answers = state.get("answers", [])
+    queries = llm_service.model.with_structured_output(Queries).invoke(
+        [
+            SystemMessage(
+                content=PlannerPrompts.PLANNER_CRITIQUE_ASSISTANT.format(
+                    queries=pastQueries, answers=answers
+                )
+            ),
+            HumanMessage(content=state["critique"]),
         ]
-        response = self.llm.model.invoke(messages)
-        logger.info("Plan generated")
-        
-        return {**state, "plan": response.content}
+    )
+    print("**********************************************************")
+    print("Queries and Response:")
+    for q in queries.queries:
+        print("Query: " + q)
+        pastQueries.append(q)
+        response = search_service.client.search(query=q, max_results=2)
+        for r in response["results"]:
+            lat = r.get("latitude", "")
+            lng = r.get("longitude", "")
+            addr = r.get("address", "")
+            content = r.get("content", "")
+            combined_info = f"{content}\nLat: {lat}, Long: {lng}, Address: {addr}"
+            print("Tavily Response: " + combined_info)
+            answers.append(combined_info)
+    print("**********************************************************")
+    return {**state, "queries": pastQueries, "answers": answers}
+
+def should_continue(state: AgentState) -> str:
+    """
+    Decision function to determine if the workflow should continue
     
-    def research_plan_node(self, state: AgentState) -> AgentState:
-        """
-        Research the plan by generating and executing search queries
+    Args:
+        state: Current state of the agent
         
-        Args:
-            state: Current agent state
-            
-        Returns:
-            Updated agent state with queries and answers
-        """
-        logger.info("Running research plan node")
-        past_queries = state.get('queries', [])
-        answers = state.get('answers', [])
-        
-        queries = self.llm.with_structured_output(
-            Queries,
-            PlannerPrompts.PLANNER_ASSISTANT,
-            state['plan']
-        )
-        
-        for q in queries.queries:
-            logger.info(f"Executing query: {q}")
-            past_queries.append(q)
-            results = self.search.search(q)
-            
-            for result in results:
-                answers.append(result["combined_info"])
-        
-        return {**state, "queries": past_queries, "answers": answers}
+    Returns:
+        Next node name or END
+    """
+    from langgraph.graph import END
     
-    def generation_node(self, state: AgentState) -> AgentState:
-        """
-        Generate an itinerary based on the current state
-        
-        Args:
-            state: Current agent state
-            
-        Returns:
-            Updated agent state with draft itinerary
-        """
-        logger.info("Running generation node")
-        itinerary_params = state.get("itinerary_params", {})
-        dynamic_query = self.itinerary.build_dynamic_itinerary_query(itinerary_params)
-        refined_itinerary = self.itinerary.generate_refined_itinerary(dynamic_query)
-        
-        return {
-            **state, 
-            "draft": refined_itinerary, 
-            "revision_number": state.get("revision_number", 1) + 1
-        }
+    if state["revision_number"] > state["max_revisions"]:
+        logger.info(f"Reached max revisions ({state['max_revisions']}), ending workflow")
+        return END
     
-    def reflection_node(self, state: AgentState) -> AgentState:
-        """
-        Generate critique of the current draft itinerary
-        
-        Args:
-            state: Current agent state
-            
-        Returns:
-            Updated agent state with critique
-        """
-        logger.info("Running reflection node")
-        messages = [
-            SystemMessage(content=PlannerPrompts.PLANNER_CRITIQUE), 
-            HumanMessage(content=state['draft'])
-        ]
-        response = self.llm.model.invoke(messages)
-        
-        return {**state, "critique": response.content}
-    
-    def research_critique_node(self, state: AgentState) -> AgentState:
-        """
-        Research the critique by generating and executing search queries
-        
-        Args:
-            state: Current agent state
-            
-        Returns:
-            Updated agent state with additional queries and answers
-        """
-        logger.info("Running research critique node")
-        past_queries = state.get('queries', [])
-        answers = state.get('answers', [])
-        
-        # Format the queries and answers for prompt
-        queries_str = "\n".join(past_queries)
-        answers_str = "\n".join(answers)
-        
-        prompt = PlannerPrompts.PLANNER_CRITIQUE_ASSISTANT.format(
-            queries=queries_str, 
-            answers=answers_str
-        )
-        
-        queries = self.llm.with_structured_output(
-            Queries,
-            prompt,
-            state['critique']
-        )
-        
-        for q in queries.queries:
-            logger.info(f"Executing query: {q}")
-            past_queries.append(q)
-            results = self.search.search(q)
-            
-            for result in results:
-                answers.append(result["combined_info"])
-        
-        return {**state, "queries": past_queries, "answers": answers}
-    
-    def should_continue(self, state: AgentState) -> str:
-        """
-        Determine whether to continue or end the workflow
-        
-        Args:
-            state: Current agent state
-            
-        Returns:
-            Next node name or END
-        """
-        if state["revision_number"] > state["max_revisions"]:
-            logger.info(f"Reached max revisions ({state['max_revisions']}), stopping workflow")
-            return END
-        logger.info(f"Continuing with revision {state['revision_number']}")
-        return "reflect"
+    logger.info(f"Continuing to reflection (revision {state['revision_number']} of {state['max_revisions']})")
+    return "reflect"

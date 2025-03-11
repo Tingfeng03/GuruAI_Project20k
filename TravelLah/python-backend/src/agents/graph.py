@@ -1,72 +1,66 @@
+import json
+import re
 from typing import Dict, Any, List
 from langgraph.graph import StateGraph, END
-from requests import options
-from state import AgentState
-from nodes import AgentNodes
-from settings.logging import setup_logger
-from utils.json_utils import extract_json_from_llm_response
 
-# Set up logger
-logger = setup_logger("agents.graph")
+from src.agents.state import AgentState
+from src.agents.nodes import (
+    plan_node,
+    research_plan_node,
+    generation_node,
+    reflection_node,
+    research_critique_node,
+    should_continue
+)
+from src.settings.logging import app_logger as logger
 
 class ItineraryWorkflow:
-    """Workflow for generating travel itineraries using LangGraph"""
+    """
+    Manages the travel itinerary generation workflow
+    """
     
-    def __init__(self, agent_nodes: AgentNodes):
-        """
-        Initialize the workflow with agent nodes
+    def __init__(self):
+        # Build the workflow graph
+        self.builder = StateGraph(AgentState)
         
-        Args:
-            agent_nodes: Instance of AgentNodes containing node functions
-        """
-        self.nodes = agent_nodes
-        self.graph = self._build_graph()
-    
-    def _build_graph(self) -> StateGraph:
-        """
-        Build the workflow graph
-        
-        Returns:
-            Compiled StateGraph
-        """
-        builder = StateGraph(AgentState)
-        
-        # Add nodes
-        builder.add_node("planner", self.nodes.plan_node)
-        builder.add_node("research_plan", self.nodes.research_plan_node)
-        builder.add_node("generate", self.nodes.generation_node)
-        builder.add_node("reflect", self.nodes.reflection_node)
-        builder.add_node("research_critique", self.nodes.research_critique_node)
+        # Add all nodes
+        self.builder.add_node("planner", plan_node)
+        self.builder.add_node("research_plan", research_plan_node)
+        self.builder.add_node("generate", generation_node)
+        self.builder.add_node("reflect", reflection_node)
+        self.builder.add_node("research_critique", research_critique_node)
         
         # Set entry point
-        builder.set_entry_point("planner")
+        self.builder.set_entry_point("planner")
         
         # Add conditional edges
-        builder.add_conditional_edges(
+        self.builder.add_conditional_edges(
             "generate", 
-            self.nodes.should_continue, 
+            should_continue, 
             {END: END, "reflect": "reflect"}
         )
         
-        # Add standard edges
-        builder.add_edge("planner", "research_plan")
-        builder.add_edge("research_plan", "generate")
-        builder.add_edge("reflect", "research_critique")
-        builder.add_edge("research_critique", "generate")
+        # Add direct edges
+        self.builder.add_edge("planner", "research_plan")
+        self.builder.add_edge("research_plan", "generate")
+        self.builder.add_edge("reflect", "research_critique")
+        self.builder.add_edge("research_critique", "generate")
         
-        return builder.compile()
+        # Compile the graph
+        self.graph = self.builder.compile()
     
-    def run(self, stream_options: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, options) -> Dict[str, Any]:
         """
-        Run the workflow with the given options
+        Run the itinerary generation workflow
         
         Args:
-            stream_options: Dictionary containing workflow inputs
+            options: Dictionary with workflow options
             
         Returns:
-            Final itinerary as a dictionary
+            The generated itinerary as a dictionary
         """
-        logger.info(f"Starting itinerary workflow with options: {stream_options}")
+        logger.info(f"Starting itinerary workflow with options: {options}")
+        
         thread = {"configurable": {"thread_id": "4"}}
         output_states = []
         final_draft_dict = None
@@ -74,21 +68,29 @@ class ItineraryWorkflow:
         # Execute the workflow graph
         for state in self.graph.stream(options, thread):
             if state.get('generate') and state.get('generate').get("draft"):
+                draft_str = state.get("generate").get("draft")
+                if draft_str:
+                    draft_str = draft_str.strip()
+                    draft_str = re.sub(r"^```json\s*", "", draft_str)
+                    draft_str = re.sub(r"```$", "", draft_str)
+                    draft_str = draft_str.strip()
                 try:
-                    draft_str = state.get('generate').get("draft")
-                    draft_dict = extract_json_from_llm_response(draft_str)
-                    final_draft_dict = draft_dict
-                    logger.info("Successfully parsed draft itinerary")
-                except Exception as e:
-                    logger.error(f"Error parsing draft: {e}")
+                    draft_json = json.loads(draft_str)
+                    final_draft_dict = draft_json
+                    print("Parsed draft itinerary successfully!")
+                except json.JSONDecodeError as e:
+                    print("Error parsing the draft as JSON:", e)
             
             output_states.append(state)
         
+        # Ensure we have a final result
         if not final_draft_dict:
             error_msg = "Final draft itinerary not found in any state"
             logger.error(error_msg)
             raise ValueError(error_msg)
         
-        logger.info("Workflow completed successfully")
+        logger.info("Itinerary workflow completed successfully")
         return final_draft_dict
-    
+
+# Initialize workflow
+itinerary_workflow = ItineraryWorkflow()

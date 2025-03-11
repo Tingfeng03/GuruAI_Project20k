@@ -4,8 +4,8 @@ from typing import Dict, Any, Optional, List
 class StreamOptions(BaseModel):
     """Input schema for itinerary generation request"""
     task: str
-    max_revisions: int = 3
-    revision_number: int = 0
+    max_revisions: int
+    revision_number: int
     itinerary_params: Dict[str, Any]
 
 class ActivityContent(BaseModel):
