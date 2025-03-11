@@ -1,21 +1,22 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, StyleSheet, Dimensions, ScrollView } from "react-native";
-import {Appbar, Searchbar, Text} from 'react-native-paper';
+import { View, Alert, StyleSheet, ScrollView, Button } from "react-native";
+import { Searchbar } from "react-native-paper";
 import CarouselItem from "../../components/CarouselItem";
 
 export default function HomeScreen() {
-// export default function App(): JSX.Element {
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const onChangeSearch = (query: string) => setSearchQuery(query);
   const [message, setMessage] = useState<string>("");
+
   console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
+
   const handleSendMessage = async () => {
     console.log(process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP);
     if (!message.trim()) {
       Alert.alert("Error", "Please enter a message.");
       return;
     }
-  
+
     try {
       const response = await fetch(
         `http://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/messages`,
@@ -25,7 +26,7 @@ export default function HomeScreen() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ content: message }),
-        },
+        }
       );
 
       if (!response.ok) {
@@ -33,34 +34,43 @@ export default function HomeScreen() {
       }
 
       const data = await response.text();
-    const renderCarouselItem = ({item}: {item: {title: string; url: string} }) => {
-      return <CarouselItem title={item.title} url={item.url} />;
+      console.log("Message sent successfully:", data);
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
-    return (
-        <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}> 
-                <Searchbar 
-                    placeholder='Where would you like to go?'
-                    onChangeText={onChangeSearch}
-                    value={searchQuery}
-                    style={styles.searchbar}
-                />
-            </ScrollView>
-        </View>
-    )
+  };
+
+  // This function is currently defined for potential use in a Carousel component.
+  const renderCarouselItem = ({ item }: { item: { title: string; url: string } }) => {
+    return <CarouselItem title={item.title} url={item.url} />;
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Searchbar
+          placeholder='Where would you like to go?'
+          onChangeText={onChangeSearch}
+          value={searchQuery}
+          style={styles.searchbar}
+        />
+        {/* Example button to trigger handleSendMessage */}
+        <Button title="Send Message" onPress={handleSendMessage} />
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#FFFFFF',
-    },
-    scrollContent: {
-      paddingHorizontal: 16,
-      paddingTop: 16,
-    },
-    searchbar: {
-      marginBottom: 16,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  searchbar: {
+    marginBottom: 16,
+  },
 });
-

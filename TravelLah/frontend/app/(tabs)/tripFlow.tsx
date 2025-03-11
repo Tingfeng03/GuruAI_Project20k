@@ -1,18 +1,18 @@
 import React from "react";
-import {View, StyleSheet} from "react-native";
-import {Avatar, Button, Card, Text} from "react-native-paper";
-import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
+import { View, StyleSheet } from "react-native";
+import { Avatar, Button, Card, Text } from "react-native-paper";
+import Animated from 'react-native-reanimated';
 
 interface CardProps {
-    trip : {
-        datetime : Date;
-        specificNameOfLocation : string;
-        Address : string;
-        goingWhere : {
+    trip: {
+        datetime: Date;
+        specificNameOfLocation: string;
+        Address: string;
+        goingWhere: {
             lat: number;
             long: number;
         };
-        WhatToDo : string;
+        WhatToDo: string;
     }
 }
 
@@ -30,12 +30,13 @@ const TripFlow: React.FC = () => {
     React.useEffect(() => {
         const fetchData = async () => {
             try {
+                //FIXME
                 const response = await fetch("https://your-backend-api.com/location");
                 const data: TripFlow[] = await response.json();
                 setdata(data);
             } catch (error) {
                 console.error("Error fetching data: ", error);
-            } 
+            }
         };
         fetchData();
     }, []); // this empty array ensures useEffect only run once, since we provide empty dependency
@@ -43,13 +44,13 @@ const TripFlow: React.FC = () => {
     return (
         // consider using FlatList if more than 20 items
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {data.map((tripflow: TripFlow, index) => 
+            <Animated.ScrollView contentContainerStyle={styles.scrollContent}>
+                {data.map((tripflow: TripFlow, index) =>
                     tripflow.cards.map((card: CardProps, cardIndex) => {
                         const trip = card.trip;
                         return (
                             <Card key={`${index}-${cardIndex}`} style={styles.card}>
-                                <Card.Cover source={{uri: getMapImageURL(trip.goingWhere.lat, trip.goingWhere.long)}} />
+                                <Card.Cover source={{ uri: getMapImageURL(trip.goingWhere.lat, trip.goingWhere.long) }} />
                                 <Card.Content>
                                     <Text style={styles.title}>{trip.specificNameOfLocation}</Text>
                                     <Text style={styles.address}>{trip.Address}</Text>
@@ -58,9 +59,9 @@ const TripFlow: React.FC = () => {
                                 </Card.Content>
                             </Card>
                         )
-                    })    
+                    })
                 )}
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
