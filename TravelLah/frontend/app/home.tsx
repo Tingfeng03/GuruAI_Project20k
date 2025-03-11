@@ -11,7 +11,6 @@ export default function HomeScreen() {
       <Button title="Login" onPress={() => router.push("/login")} />
       {/* Register Button */}
       <Button title="Register" onPress={() => router.push("/register")} />
-      // I don't understand why Register needs to be uppercase R
     </View>
   );
 }

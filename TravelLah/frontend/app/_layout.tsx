@@ -10,6 +10,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import HeaderNav from '@/components/HeaderNav';
 import { CustomDrawerContent } from '@/components/CustomDrawerContent';
 import { drawerRoutes } from '@/config/drawerRoutes';
+import { PaperProvider } from 'react-native-paper';
+import { TripProvider } from '@/Provider/TripContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,22 +32,27 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Drawer
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
-          header: () => <HeaderNav />,
-          drawerPosition: 'left',
-          drawerType: 'slide',
-        }}
-      >
-        {/* Register the screens you want in the drawer in /frontend/config/drawerRoutes.ts */}
+    <TripProvider>
+      <PaperProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Drawer
+            drawerContent={(props) => <CustomDrawerContent {...props} />}
+            screenOptions={{
+              header: () => <HeaderNav />,
+              drawerPosition: 'left',
+              drawerType: 'slide',
+            }}
+          >
+            {/* Register the screens you want in the drawer in /frontend/config/drawerRoutes.ts */}
 
-        {drawerRoutes.map((route) => (
-          <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
-        ))}
-      </Drawer>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+            {drawerRoutes.map((route) => (
+              <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
+            ))}
+          </Drawer>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </PaperProvider>
+    </TripProvider>
+
   );
 }
