@@ -11,7 +11,7 @@ load_dotenv(dotenv_path=ROOT_DIR / ".env")
 class Settings:
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY")
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY")
-
+    MONGODB_PASS: str = os.getenv("MONGODB_PASS")
     LLM_MODEL: str = "gemini-1.5-flash"
     LLM_TEMPERATURE: int = 0
 
