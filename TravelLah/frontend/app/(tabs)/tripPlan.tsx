@@ -6,12 +6,16 @@ import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
 
 
 interface CardProps {
-    trip : {
+    itinerary : {
         tripSerialNo: number;
         travelLocation : {
             lat: number;
             long: number;
         };
+        duration : {
+            startDate : Date;
+            endDate : Date;
+        }
         locationName : string;
     }
 }
@@ -33,7 +37,7 @@ const TripPlan: React.FC = () => {
         const fetchData = async () => {
             try {
                 // TODO: replace with actual backend API
-                const response = await fetch("https://your-backend-api.com/location");
+                const response = await fetch(`https://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/TripPlan`);
                 const data: CardProps[] = await response.json();
                 setdata(data);
             } catch (error) {
@@ -50,13 +54,14 @@ const TripPlan: React.FC = () => {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 { 
                     data.map((card: CardProps, index) => {
-                        const trip = card.trip;
+                        const itinerary = card.itinerary;
                         return (
-                            <TouchableOpacity onPress={() => redirectTripFlow(trip.tripSerialNo)}>
+                            <TouchableOpacity onPress={() => redirectTripFlow(itinerary.tripSerialNo)}>
                                 <Card key={`${index}`} style={styles.card}>
-                                    <Card.Cover source={{uri: getMapImageURL(trip.travelLocation.lat, trip.travelLocation.long)}} />
+                                    <Card.Cover source={{uri: getMapImageURL(itinerary.travelLocation.lat, itinerary.travelLocation.long)}} />
                                     <Card.Content>
-                                        <Text style={styles.address}>{trip.locationName}</Text>
+                                        <Text style={styles.address}>{itinerary.locationName}</Text>
+                                        <Text>{itinerary.duration.startDate.toDateString()} - {itinerary.duration.endDate.toDateString()}</Text>
                                     </Card.Content>
                                 </Card>
                             </TouchableOpacity>

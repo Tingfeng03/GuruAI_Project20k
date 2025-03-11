@@ -4,21 +4,25 @@ import {Card, Text} from "react-native-paper";
 import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
 import { useRoute } from '@react-navigation/native';
 
-interface CardProps {
+interface ActivityContent {
     trip : {
-        datetime : Date;
         specificNameOfLocation : string;
         Address : string;
         goingWhere : {
             lat: number;
             long: number;
         };
+        duration : {
+            startTime: string; // Example value can be "8:30"
+            endTime: string;
+        };
         WhatToDo : string;
     }
 }
 
 interface TripFlow {
-    cards: CardProps[];
+    datetime : Date;
+    activity: ActivityContent[];
 }
 
 const getMapImageURL = (lat: number, long: number) => {
@@ -34,7 +38,7 @@ const TripFlow: React.FC = () => {
         const fetchData = async () => {
             try {
                 // TODO: replace with actual backend API
-                const response = await fetch(`https://your-backend-api.com/location/${serialNo}`);
+                const response = await fetch(`https://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/TripFlow/${serialNo}`);
                 const data: TripFlow[] = await response.json();
                 setdata(data);
             } catch (error) {
@@ -50,7 +54,7 @@ const TripFlow: React.FC = () => {
             <Text style={styles.title}>Your Plan Trip</Text>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {data.map((tripflow: TripFlow, index) => 
-                    tripflow.cards.map((card: CardProps, cardIndex) => {
+                    tripflow.activity.map((card: ActivityContent, cardIndex) => {
                         const trip = card.trip;
                         return (
                             <Card key={`${index}-${cardIndex}`} style={styles.card}>
@@ -59,7 +63,8 @@ const TripFlow: React.FC = () => {
                                     <Text style={styles.title}>{trip.specificNameOfLocation}</Text>
                                     <Text style={styles.address}>{trip.Address}</Text>
                                     <Text style={styles.details}>{trip.WhatToDo}</Text>
-                                    <Text style={styles.datetime}>{new Date(trip.datetime).toLocaleString()}</Text>
+                                    <Text style={styles.datetime}>{new Date(tripflow.datetime).toLocaleString()}</Text>
+                                    <Text style={styles.datetime}>{trip.duration.startTime}-{trip.duration.endTime}</Text>
                                 </Card.Content>
                             </Card>
                         )
