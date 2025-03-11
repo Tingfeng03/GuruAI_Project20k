@@ -87,8 +87,8 @@ urllib3==2.3.0
 wcwidth==0.2.13
 yarl==1.18.3
 zipp==3.21.0
-
-
+pathlib==1.0.1
+pymongo==4.11.2
 
 nest_asyncio
 motor
