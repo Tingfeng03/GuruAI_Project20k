@@ -40,7 +40,6 @@ export default function HomeScreen() {
     }
   };
 
-  // This function is currently defined for potential use in a Carousel component.
   const renderCarouselItem = ({ item }: { item: { title: string; url: string } }) => {
     return <CarouselItem title={item.title} url={item.url} />;
   };
@@ -64,7 +63,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#f5f5f5',
   },
   scrollContent: {
     paddingHorizontal: 16,

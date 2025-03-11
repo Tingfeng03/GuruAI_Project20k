@@ -5,13 +5,21 @@ import { CounterGroup } from './Counter';
 import { useCounter } from '../hooks/useCounter';
 
 interface BookingCardProps {
-  onSearch: () => void;
+  onSearch: (guestsData: { adults: number; children: number; rooms: number }) => void;
 }
 
 export const BookCard: React.FC<BookingCardProps> = ({ onSearch }) => {
   const adults = useCounter({ initialValue: 1, min: 1, max: 6 });
   const children = useCounter({ initialValue: 0, min: 0, max: 4 });
   const rooms = useCounter({ initialValue: 1, min: 1, max: 3 });
+
+  const handleDone = () => {
+    onSearch({
+      adults: adults.value,
+      children: children.value,
+      rooms: rooms.value,
+    });
+  };
 
   return (
     <Surface style={styles.card} elevation={4}>
@@ -32,7 +40,7 @@ export const BookCard: React.FC<BookingCardProps> = ({ onSearch }) => {
       <CounterGroup
         iconName="child"
         label="Children"
-        iconFamily='FontAwesome6'
+        iconFamily="FontAwesome6"
         value={children.value}
         onIncrement={children.increment}
         onDecrement={children.decrement}
@@ -43,7 +51,6 @@ export const BookCard: React.FC<BookingCardProps> = ({ onSearch }) => {
       <CounterGroup
         iconName="bed"
         label="Rooms"
-        
         value={rooms.value}
         onIncrement={rooms.increment}
         onDecrement={rooms.decrement}
@@ -53,11 +60,11 @@ export const BookCard: React.FC<BookingCardProps> = ({ onSearch }) => {
 
       <Button
         mode="contained"
-        onPress={onSearch}
+        onPress={handleDone}
         style={styles.searchButton}
         contentStyle={styles.searchButtonContent}
       >
-        Search Rooms
+        Done
       </Button>
     </Surface>
   );
@@ -67,7 +74,7 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     borderRadius: 12,
-    backgroundColor: "white",
+    backgroundColor: 'white',
     marginTop: 50,
     borderTopEndRadius: 40,
     borderBottomEndRadius: 40,
@@ -76,8 +83,8 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 20,
-    textAlign: "center",
-    color: "#333",
+    textAlign: 'center',
+    color: '#333',
   },
   searchButton: {
     marginTop: 30,
