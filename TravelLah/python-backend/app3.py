@@ -2,7 +2,7 @@ import os
 import re
 import json
 import logging
-from typing import TypedDict, List
+from typing import TypedDict, List, Dict, Any
 from langchain_community.adapters.openai import convert_openai_messages
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -31,34 +31,35 @@ class Queries(BaseModel):
     queries: List[str]
 
 model = ChatGoogleGenerativeAI(
-            temperature=0,
-            model="gemini-1.5-flash", #gemini-1.5-flash, gemini-1.5-pro (I ran out of prompts for pro)
-            convert_system_message_to_human=True,
-            google_api_key=GOOGLE_API_KEY
-        )
+    temperature=0,
+    model="gemini-1.5-flash",  # gemini-1.5-flash or gemini-1.5-pro
+    convert_system_message_to_human=True,
+    google_api_key=GOOGLE_API_KEY
+)
 
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
-VACATION_PLANNING_SUPERVISOR_PROMPT="""You are the vacation planning supervisor. You have to give a detailed outline of what the planning agent \
-has to consider when planning the vacation according to the user input."""
+VACATION_PLANNING_SUPERVISOR_PROMPT = (
+    "You are the vacation planning supervisor. You have to give a detailed outline of what the planning agent "
+    "has to consider when planning the vacation according to the user input."
+)
 
-PLANNER_ASSISTANT_PROMPT = """You are an assistant charged with providing information that can be used by the planner to plan the vacation.
-Generate a list of search queries that will be useful for the planner. Generate a maximum of 3 queries."""
+PLANNER_ASSISTANT_PROMPT = (
+    "You are an assistant charged with providing information that can be used by the planner to plan the vacation. "
+    "Generate a list of search queries that will be useful for the planner. Generate a maximum of 3 queries."
+)
 
-PLANNER_CRITIQUE_PROMPT = """Your duty is to criticize the planning done by the vacation planner.
-In your response include if you agree with options presented by the planner, if not then give detailed suggestions on what should be changed.
-You can also suggest some other destination that should be checked out.
-"""
+PLANNER_CRITIQUE_PROMPT = (
+    "Your duty is to criticize the planning done by the vacation planner. In your response include if you agree with "
+    "options presented by the planner, if not then give detailed suggestions on what should be changed. You can also "
+    "suggest some other destination that should be checked out."
+)
 
-PLANNER_CRITIQUE_ASSISTANT_PROMPT = """You are a assistant charged with providing information that can be used to make any requested revisions.
-Generate a list of search queries that will gather any relevent information. Only generate 3 queries max. 
-You should consider the queries and answers that were previously used:
-QUERIES:
-{queries}
-
-ANSWERS:
-{answers}
-"""
+PLANNER_CRITIQUE_ASSISTANT_PROMPT = (
+    "You are a assistant charged with providing information that can be used to make any requested revisions. Generate a "
+    "list of search queries that will gather any relevent information. Only generate 3 queries max. You should consider the "
+    "queries and answers that were previously used:\nQUERIES:\n{queries}\n\nANSWERS:\n{answers}"
+)
 
 class TravelAgentPlanner:
     def __init__(self, llm, tavily):
@@ -70,7 +71,9 @@ class TravelAgentPlanner:
         tripId = itinerary_params.get("tripId", "Unknown Trip ID")
         destination = itinerary_params.get("destination", "Unknown Destination")
         num_days = itinerary_params.get("num_days", 1)
-        dates = itinerary_params.get("dates", "Not specified")
+        # New keys for start and end date
+        start_date = itinerary_params.get("start_date", "Not specified")
+        end_date = itinerary_params.get("end_date", "Not specified")
         party_size = itinerary_params.get("party_size", 2)
         num_rooms = itinerary_params.get("num_rooms", 2)
         budget = itinerary_params.get("budget", "moderate")
@@ -84,7 +87,8 @@ class TravelAgentPlanner:
             f"Trip ID: {tripId}",
             f"Destination: {destination}",
             f"Number of Days: {num_days}",
-            f"Travel Dates: {dates}",
+            f"Start Date: {start_date}",
+            f"End Date: {end_date}",
             f"Budget: {budget}",
             f"Travellers: {party_size}",
             f"Rooms: {num_rooms}",
@@ -106,7 +110,6 @@ class TravelAgentPlanner:
             "Each day should include a header, and for that day provide a list of recommended activities that covers 3 meals and 3 activities. "
             "For each activity, include the start time, end time, and specify if it is an 'indoor' or 'outdoor' activity. Also include any relevant notes."
         )
-        # Updated condition to enforce concrete values for all attributes
         condition = (
             "Your final output must be valid JSON with exactly one key: 'itinerary'. The 'itinerary' object must have the keys 'userId', "
             "'tripSerialNo', 'TravelLocation', 'latitude', 'longitude', and 'tripFlow'. 'tripFlow' is a JSON array, with each element being an object containing the keys "
@@ -124,13 +127,7 @@ class TravelAgentPlanner:
         
         retrieval_context = ""
         tavily_response = self.tavily.search(query=query_text, max_results=2)
-        destination_info = []
         if tavily_response and "results" in tavily_response:
-            for r in tavily_response["results"]:
-                lat = r.get("latitude", "")
-                lng = r.get("longitude", "")
-                addr = r.get("address", "")
-                destination_info.append(f"Lat: {lat}, Long: {lng}, Address: {addr}")
             retrieval_context = "\n".join([r.get("content", "") for r in tavily_response["results"]])
         
         messages = [
@@ -143,10 +140,7 @@ class TravelAgentPlanner:
         lc_messages = convert_openai_messages(messages)
         response = self.llm.invoke(lc_messages)
         logging.info("Raw LLM response (refined_itinerary): %s", response.content)
-
         return response.content
-
-
 
 travel_agent_planner = TravelAgentPlanner(model, tavily)
 
@@ -160,7 +154,6 @@ def plan_node(state: AgentState):
     print("Plan: ")
     print(response.content)
     print("**********************************************************")
-
     return {**state, "plan": response.content}
 
 def research_plan_node(state: AgentState):
@@ -169,7 +162,7 @@ def research_plan_node(state: AgentState):
     queries = model.with_structured_output(Queries).invoke([
         SystemMessage(content=PLANNER_ASSISTANT_PROMPT),
         HumanMessage(content=state['plan'])
-    ])   
+    ])
     print("**********************************************************")
     print("Queries and Response: ")
     for q in queries.queries:
@@ -185,15 +178,12 @@ def research_plan_node(state: AgentState):
             print("Tavily Response: " + combined_info)
             answers.append(combined_info)
     print("**********************************************************")
-
     return {**state, "queries": pastQueries, "answers": answers}
 
 def generation_node(state: AgentState):
     itinerary_params = state.get("itinerary_params", {})
     dynamic_query = travel_agent_planner.build_dynamic_itinerary_query(itinerary_params)
-    
     refined_itinerary = travel_agent_planner.generate_refined_itinerary(dynamic_query)
-    
     print("**********************************************************")
     print("Dynamic Itinerary Query: ")
     print(dynamic_query)
@@ -201,7 +191,6 @@ def generation_node(state: AgentState):
     print("Refined Itinerary: ")
     print(refined_itinerary)
     print("**********************************************************")
-
     return {**state, "draft": refined_itinerary, "revision_number": state.get("revision_number", 1) + 1}
 
 def reflection_node(state: AgentState):
@@ -214,12 +203,11 @@ def reflection_node(state: AgentState):
     print("Critique: ")
     print(response.content)
     print("**********************************************************")
-
     return {**state, "critique": response.content}
 
 def research_critique_node(state: AgentState):
-    pastQueries = state['queries'] or []
-    answers = state['answers'] or []
+    pastQueries = state.get('queries', [])
+    answers = state.get('answers', [])
     queries = model.with_structured_output(Queries).invoke([
         SystemMessage(content=PLANNER_CRITIQUE_ASSISTANT_PROMPT.format(queries=pastQueries, answers=answers)),
         HumanMessage(content=state['critique'])
@@ -239,8 +227,7 @@ def research_critique_node(state: AgentState):
             print("Tavily Response: " + combined_info)
             answers.append(combined_info)
     print("**********************************************************")  
-
-    return {**state, "queries": pastQueries,"answers": answers}
+    return {**state, "queries": pastQueries, "answers": answers}
 
 def should_continue(state):
     if state["revision_number"] > state["max_revisions"]:
@@ -248,7 +235,6 @@ def should_continue(state):
     return "reflect"
 
 builder = StateGraph(AgentState)
-
 builder.add_node("planner", plan_node)
 builder.add_node("research_plan", research_plan_node)
 builder.add_node("generate", generation_node)
@@ -268,79 +254,40 @@ builder.add_edge("research_plan", "generate")
 builder.add_edge("reflect", "research_critique")
 builder.add_edge("research_critique", "generate")
 
-def run_itinerary_flow( stream_options):
+def run_itinerary_flow(stream_options):
     # with SqliteSaver.from_conn_string(":memory:") as memory:
     graph = builder.compile()
     thread = {"configurable": {"thread_id": "4"}}
     output_states = []
-
-    # stream_options = {
-    #     'task': "Suggest me a fun, culturally immersive relaxed, 5 day trip to Hanoi, Vietnam",
-    #     "max_revisions": 1,  # was 3 and resource limit keeps being hit, anyways dont need so many for testing yet
-    #     "revision_number": 1,
-    #     "itinerary_params": {
-    #         "userId": "U123",
-    #         "tripId": "T123",
-    #         "destination": "Hanoi, Vietnam",
-    #         "num_days": 7,
-    #         "dates": "2025-0-01 to 2025-04-02",
-    #         "party_size": 4,
-    #         "num_rooms": 2,
-    #         "budget": "moderate",
-    #         "activities": "cultural tours, historical sites, local markets, local cuisines",
-    #         "food": "local-cuisine",
-    #         "pace": "relaxed",
-    #         "notes": "Include both indoor and outdoor activities; mention local festivals if applicable."
-    #     }
-    # }
+    final_draft_dict = None
 
     for state in graph.stream(stream_options, thread):
-        if(state.get('generate') and state.get('generate').get("draft")):
+        if state.get('generate') and state.get('generate').get("draft"):
             draft_str = state.get('generate').get("draft")
             if draft_str:
                 draft_str = draft_str.strip()
                 draft_str = re.sub(r'^```json\s*', '', draft_str)
                 draft_str = re.sub(r'```$', '', draft_str)
                 draft_str = draft_str.strip()
-
                 try:
                     draft_json = json.loads(draft_str)
                     final_draft_dict = draft_json
                     print("Parsed draft itinerary successfully!")
                 except json.JSONDecodeError as e:
                     print("Error parsing the draft as JSON:", e)
-
         output_states.append(state)
 
     if not final_draft_dict:
         raise ValueError("Final draft itinerary not found in any state.")
 
-    #print("Final draft itinerary (dict):", final_draft_dict)
     print("Formatted JSON:")
     print(json.dumps(final_draft_dict, indent=4))
     return final_draft_dict
 
-
-# test_data = run_itinerary_flow(builder)
-# print("Formatted JSON:")
-# print(json.dumps(test_data, indent=4))
-
-
-
-
-from typing import Dict, Any
-class StreamOptions(BaseModel):
-    task: str
-    max_revisions: int
-    revision_number: int
-    itinerary_params: Dict[str, Any]
-
-
-
-
-from fastapi import FastAPI,APIRouter,  HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+
 app = FastAPI()
 router = APIRouter() 
 origins = [
@@ -356,8 +303,11 @@ app.add_middleware(
 )
 
 
-
-
+class StreamOptions(BaseModel):
+    task: str
+    max_revisions: int
+    revision_number: int
+    itinerary_params: Dict[str, Any]
 
 @app.post("/itinerary")
 async def create_itinerary(options: StreamOptions):
@@ -366,14 +316,11 @@ async def create_itinerary(options: StreamOptions):
         itinerary = run_itinerary_flow(stream_options)
         return itinerary
     except Exception as e:
-        raise HTTPException (status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
-
-
-# Root endpoint for testing.
 @app.get("/")
 async def read_root():
-    return {"message": "FastAPI backend "}
+    return {"message": "FastAPI backend"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
