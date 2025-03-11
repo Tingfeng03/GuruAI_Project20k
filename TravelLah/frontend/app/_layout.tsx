@@ -1,20 +1,22 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import HeaderNav from '@/components/HeaderNav';
+import { CustomDrawerContent } from '@/components/CustomDrawerContent';
+import { drawerRoutes } from '@/config/drawerRoutes';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   useEffect(() => {
@@ -29,10 +31,20 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          header: () => <HeaderNav />,
+          drawerPosition: 'left',
+          drawerType: 'slide',
+        }}
+      >
+        {/* Register the screens you want in the drawer in /frontend/config/drawerRoutes.ts */}
+
+        {drawerRoutes.map((route) => (
+          <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
+        ))}
+      </Drawer>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
