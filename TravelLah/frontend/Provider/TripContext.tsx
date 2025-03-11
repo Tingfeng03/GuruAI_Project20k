@@ -10,6 +10,10 @@ export interface TripData {
     rooms: number;
   };
   budget: string;
+  activities: string;
+  food: string;
+  pace: string;
+  additionalNotes: string;
 }
 
 export interface TripContextType {
@@ -28,6 +32,10 @@ export const TripContext = createContext<TripContextType>({
       rooms: 1,
     },
     budget: '',
+    activities: '',
+    food: '',
+    pace: '',
+    additionalNotes: '',
   },
   setTripData: () => {},
 });
@@ -43,6 +51,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       rooms: 1,
     },
     budget: '',
+    activities: '',
+    food: '',
+    pace: '',
+    additionalNotes: '',
   });
 
   const setTripData = (data: Partial<TripData>) => {
