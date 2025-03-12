@@ -14,6 +14,7 @@ export interface TripData {
   food: string;
   pace: string;
   additionalNotes: string;
+  task?: string;
 }
 
 export interface TripContextType {
@@ -36,6 +37,7 @@ export const TripContext = createContext<TripContextType>({
     food: '',
     pace: '',
     additionalNotes: '',
+    task: '',
   },
   setTripData: () => {},
 });
@@ -55,6 +57,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     food: '',
     pace: '',
     additionalNotes: '',
+    task: '',
   });
 
   const setTripData = (data: Partial<TripData>) => {

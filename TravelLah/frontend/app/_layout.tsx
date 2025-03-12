@@ -13,6 +13,9 @@ import { drawerRoutes } from '@/config/drawerRoutes';
 import { PaperProvider } from 'react-native-paper';
 import { TripProvider } from '@/Provider/TripContext';
 
+// import { Provider } from 'react-redux';
+// import store from '.';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -51,6 +54,7 @@ export default function RootLayout() {
   }
 
   return (
+    // <Provider store={store}>
     <TripProvider>
       <PaperProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -70,6 +74,7 @@ export default function RootLayout() {
         </ThemeProvider>
       </PaperProvider>
     </TripProvider>
+    // </Provider>
 
   );
 }

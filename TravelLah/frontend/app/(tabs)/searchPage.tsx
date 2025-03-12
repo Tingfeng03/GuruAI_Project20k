@@ -38,9 +38,12 @@ export default function SearchPage() {
     setTripData({ additionalNotes: text });
   };
 
+  const tasksOnChange = (text: string) => {
+    setTripData({ task: text });
+  };
+
   const handleSearch = () => {
     console.log('Searching with trip data:', tripData);
-    // Add your search logic here...
   };
 
   return (
@@ -94,7 +97,7 @@ export default function SearchPage() {
                   " Rooms: " +
                   tripData.guestsAndRooms.rooms
                 }
-                onChangeText={() => {}}
+                onChangeText={() => { }}
                 right={<TextInput.Icon icon="account-multiple" />}
               />
             </TouchableOpacity>
@@ -138,6 +141,14 @@ export default function SearchPage() {
               onChangeText={additionalNotesOnChange}
               right={<TextInput.Icon icon="note" />}
             />
+
+            {/* <TextInput
+              label="Tasks"
+              mode="outlined"
+              value={tripData.task}
+              onChangeText={tasksOnChange}
+              right={<TextInput.Icon icon="note" />}
+            /> */}
 
             <Button mode="contained" style={styles.searchButton} onPress={handleSearch}>
               Search
