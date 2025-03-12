@@ -10,13 +10,15 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import HeaderNav from '@/components/HeaderNav';
 import { CustomDrawerContent } from '@/components/CustomDrawerContent';
 import { drawerRoutes } from '@/config/drawerRoutes';
+import { PaperProvider } from 'react-native-paper';
+import { TripProvider } from '@/Provider/TripContext';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   const [itineraries, setItineraries] = useState([]);
@@ -49,20 +51,25 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Drawer
-        drawerContent={(props) => <CustomDrawerContent {...props} itineraries={itineraries} />}
-        screenOptions={{
-          header: () => <HeaderNav />,
-          drawerPosition: 'left',
-          drawerType: 'slide',
-        }}
-      >
-        {drawerRoutes.map((route) => (
-          <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
-        ))}
-      </Drawer>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <TripProvider>
+      <PaperProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Drawer
+            drawerContent={(props) => <CustomDrawerContent {...props} itineraries={itineraries} />}
+            screenOptions={{
+              header: () => <HeaderNav />,
+              drawerPosition: 'left',
+              drawerType: 'slide',
+            }}
+          >
+                {drawerRoutes.map((route) => (
+              <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
+            ))}
+          </Drawer>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </PaperProvider>
+    </TripProvider>
+
   );
 }
