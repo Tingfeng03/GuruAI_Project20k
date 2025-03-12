@@ -2,6 +2,7 @@ import json
 import re
 from typing import Dict, Any, List
 from langgraph.graph import StateGraph, END
+from src.prompts.templates import PlannerPrompts
 
 from src.agents.state import AgentState
 from src.agents.nodes import (
@@ -64,7 +65,15 @@ class ItineraryWorkflow:
         thread = {"configurable": {"thread_id": "4"}}
         output_states = []
         final_draft_dict = None
-        
+
+        itinerary_params = options.get("itinerary_params", {})
+
+        # 1) Format the task from a known template (e.g. from PlannerPrompts)
+        formatted_task = PlannerPrompts.RAW_TASK_TEMPLATE.format(**itinerary_params)
+
+        # 2) Overwrite the user-supplied (or empty) task in 'options' 
+        options["task"] = formatted_task
+                
         # Execute the workflow graph
         for state in self.graph.stream(options, thread):
             if state.get('generate') and state.get('generate').get("draft"):

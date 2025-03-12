@@ -52,9 +52,14 @@ class PlannerPrompts:
         "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response. If the desired list of activities from the user has" \
         "already been satisfied, explore other variety of activities."
     )
-    
+
     format_condition = (
         "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions. All days must abide by the format provided, no omissions." \
         "All JSON structures and elements in the JSON array must be filled. No texts are allowed outside of any JSON structures." \
         "All JSON structures must not have duplicate keys."
+    )
+
+    RAW_TASK_TEMPLATE = (
+        "Suggest a {pace}, {num_days} day trip to {destination} with {budget} budget. "
+        "{party_size} people are going on the trip, splitting into {num_rooms} rooms. {notes}"
     )
