@@ -78,7 +78,7 @@ async def create_itinerary(payload: Dict[str, Any]):
     
 
 #  update(self, trip_id: str, activity_id: int, updated_activity: dict) -> bool:
-@app.update("/updateActivity")
+@app.patch("/updateActivity")
 async def update_activity(payload: Dict[str, Any]):
     transformed_payload = transform_frontend_to_backend_format(payload)
     itinerary_params = transformed_payload.get("itinerary_params", {})
