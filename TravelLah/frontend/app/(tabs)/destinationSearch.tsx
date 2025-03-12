@@ -1,96 +1,128 @@
-// app/destination-search.tsx
-import React, { useState, useRef, useContext } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, TextInput, List, ActivityIndicator, Button } from 'react-native-paper';
-import { useRouter } from 'expo-router';
-import { TripContext } from '../../Provider/TripContext';
+import React from "react";
+import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { Text, TextInput, Button, Card } from "react-native-paper";
+import { useRouter } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
+import { setTripData } from "../../redux/slices/tripSlice";
 
-export default function DestinationSearchPage() {
-  const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+export default function SearchPage() {
   const router = useRouter();
-  const { setTripData } = useContext(TripContext);
+  const dispatch = useDispatch();
+  const tripData = useSelector((state: RootState) => state.trip);
 
-  const handleChange = (text: string) => {
-    setQuery(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      if (text.length >= 3) {
-        setLoading(true);
-        try {
-          const response = await fetch(
-            `https://wft-geo-db.p.rapidapi.com/v1/geo/cities?namePrefix=${text}`,
-            {
-              method: 'GET',
-              headers: {
-                'X-RapidAPI-Key': process.env.EXPO_PUBLIC_RAPIDAPI_KEY || 'YOUR_API_KEY_HERE',
-                'X-RapidAPI-Host': 'wft-geo-db.p.rapidapi.com',
-              },
-            }
-          );
-          const data = await response.json();
-          if (data && data.data) {
-            setSuggestions(data.data);
-          }
-        } catch (error) {
-          console.error('Error fetching suggestions:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setSuggestions([]);
-      }
-    }, 500);
+  const formatDate = (isoString: string) => {
+    return isoString ? new Date(isoString).toLocaleDateString() : "";
   };
 
-  const handleSelect = (city: string) => {
-    setTripData({ destination: city });
-    router.push('/(tabs)/searchPage');
-  };
+  const travelDurationDisplay =
+    tripData.checkIn && tripData.checkOut
+      ? `${formatDate(tripData.checkIn)} - ${formatDate(tripData.checkOut)}`
+      : "";
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Search Destination</Text>
-      <TextInput
-        label="Type a city or region"
-        mode="outlined"
-        value={query}
-        onChangeText={handleChange}
-        style={styles.input}
-        // theme={{
-        //   colors: { text: '#000', primary: '#000', placeholder: '#666', background: '#fff' },
-        // }}
-      />
-      {loading ? (
-        <ActivityIndicator animating={true} size="small" style={styles.loadingIndicator} color="#000" />
-      ) : (
-        suggestions.map((item, index) => (
-          <List.Item
-            key={index}
-            title={item.city}
-            description={`${item.region}, ${item.countryCode}`}
-            onPress={() => handleSelect(item.city)}
-            titleStyle={styles.listItemTitle}
-            descriptionStyle={styles.listItemDescription}
-          />
-        ))
-      )}
-      <Button mode="outlined" onPress={() => router.push('/(tabs)/searchPage')} style={styles.cancelButton}>
-        Cancel
-      </Button>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.description}>
+          Our AI will help you generate the most related Trip Plan
+        </Text>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/destinationSearch")}
+              activeOpacity={0.8}
+              style={styles.touchableContainer}
+            >
+              <TextInput
+                label="Destination / Hotel Name"
+                mode="outlined"
+                value={tripData.destination}
+                editable={false}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/selectDate")}
+              activeOpacity={0.8}
+              style={styles.touchableContainer}
+            >
+              <TextInput
+                label="Travel Duration"
+                mode="outlined"
+                value={travelDurationDisplay}
+                editable={false}
+                right={<TextInput.Icon icon="calendar" />}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/guestAndRoom")}
+              activeOpacity={0.8}
+              style={styles.touchableContainer}
+            >
+              <TextInput
+                label="Guests and Rooms"
+                mode="outlined"
+                value={`Adults: ${tripData.guestsAndRooms.adults} Children: ${tripData.guestsAndRooms.children} Rooms: ${tripData.guestsAndRooms.rooms}`}
+                right={<TextInput.Icon icon="account-multiple" />}
+              />
+            </TouchableOpacity>
+
+            <TextInput
+              label="Budget"
+              mode="outlined"
+              value={tripData.budget}
+              onChangeText={(text) => dispatch(setTripData({ budget: text }))}
+              right={<TextInput.Icon icon="currency-usd" />}
+            />
+
+            <TextInput
+              label="Activities"
+              mode="outlined"
+              value={tripData.activities}
+              onChangeText={(text) => dispatch(setTripData({ activities: text }))}
+              right={<TextInput.Icon icon="run" />}
+            />
+
+            <TextInput
+              label="Food"
+              mode="outlined"
+              value={tripData.food}
+              onChangeText={(text) => dispatch(setTripData({ food: text }))}
+              right={<TextInput.Icon icon="food" />}
+            />
+
+            <TextInput
+              label="Pace"
+              mode="outlined"
+              value={tripData.pace}
+              onChangeText={(text) => dispatch(setTripData({ pace: text }))}
+              right={<TextInput.Icon icon="walk" />}
+            />
+
+            <TextInput
+              label="Additional Notes"
+              mode="outlined"
+              value={tripData.additionalNotes}
+              onChangeText={(text) => dispatch(setTripData({ additionalNotes: text }))}
+              right={<TextInput.Icon icon="note" />}
+            />
+
+            <Button mode="contained" style={styles.searchButton} onPress={() => console.log("Searching with trip data:", tripData)}>
+              Search
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  header: { fontSize: 22, marginBottom: 12, fontWeight: 'bold' },
-  input: { marginBottom: 12 },
-  loadingIndicator: { marginVertical: 10 },
-  cancelButton: { marginTop: 20 },
-  listItemTitle: { fontSize: 16, fontWeight: '600' },
-  listItemDescription: { fontSize: 14 },
+  container: { flex: 1 },
+  scrollContent: { padding: 16 },
+  description: { marginVertical: 8, fontSize: 16 },
+  card: { marginTop: 8, paddingBottom: 16 },
+  touchableContainer: { marginVertical: 8 },
+  searchButton: { marginTop: 16 },
 });

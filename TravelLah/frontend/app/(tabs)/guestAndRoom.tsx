@@ -1,20 +1,19 @@
-import React, { useContext } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Provider as PaperProvider } from 'react-native-paper';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { BookCard } from '../../components/BookCard';
-import { TripContext } from '../../Provider/TripContext';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Provider as PaperProvider } from "react-native-paper";
+import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
+import { BookCard } from "../../components/BookCard";
+import { useDispatch } from "react-redux";
+import { setTripData } from "../../redux/slices/tripSlice";
 
 const RoomBookingScreen: React.FC = () => {
   const router = useRouter();
-  const { setTripData } = useContext(TripContext);
+  const dispatch = useDispatch();
 
   const handleSearch = (guestsData: { adults: number; children: number; rooms: number }) => {
-    setTripData({
-      guestsAndRooms: guestsData,
-    });
-    router.push('/(tabs)/searchPage');
+    dispatch(setTripData({ guestsAndRooms: guestsData }));
+    router.push("/(tabs)/searchPage");
   };
 
   return (
@@ -31,7 +30,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
 });
 
