@@ -25,12 +25,18 @@ export default function SearchPage() {
     dispatch(setTripData({ [field]: value }));
   };
 
-  const handleSearch = () => {
+  const ashandleSearch = async() => {
     console.log("Searching with trip data:", tripData);
-    //FIXME
-    // send prompt to Python backend.
-    // await() then update the Redux Provider
-    // Redirect to tripPlan.tsx
+
+    const respone = await fetch("http://localhost:8080/api/itineraries", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(tripData),
+    });
+
+    console.log("Response:", respone);
   };
 
   return (
