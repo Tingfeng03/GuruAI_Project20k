@@ -2,6 +2,7 @@ import os
 import re
 import json
 import logging
+import requests
 from typing import TypedDict, List
 from langchain_community.adapters.openai import convert_openai_messages
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -103,7 +104,7 @@ class TravelAgentPlanner:
             f"Notes: {notes}"
         ]
         query = " | ".join(query_parts)
-        
+
         return query
     
     def generate_refined_itinerary(self, query_text) -> str:
@@ -344,9 +345,20 @@ def run_itinerary_flow(builder):
         raise ValueError("Final draft itinerary not found in any state.")
 
     print("Final draft itinerary (dict):", final_draft_dict)
+
+    trip_plan_url = ""
+
+    try:
+        response = requests.post(trip_plan_url, json=final_draft_dict)
+        
+        print("TripPlan POST status code:", response.status_code)
+        print("TripPlan response JSON:", response.json())
+    except requests.exceptions.RequestException as e:
+        print("Error posting to TripPlan:", e)
+    
     return final_draft_dict
 
 
 test_data = run_itinerary_flow(builder)
 print("Formatted JSON:")
-print(json.dumps(test_data, indent=4, ensure_ascii=False))
+print(json.dumps(test_data, indent=4, ensure_ascii=False))  
