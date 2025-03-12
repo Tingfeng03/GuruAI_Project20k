@@ -29,7 +29,7 @@ export default function SearchPage() {
         <Card style={styles.card}>
           <Card.Content>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/destinationSearch")}
+              onPress={() => router.push("/(tabs)/searchPage")}
               activeOpacity={0.8}
               style={styles.touchableContainer}
             >
