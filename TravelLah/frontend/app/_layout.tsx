@@ -17,8 +17,21 @@ import store from '../reducers/store';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+const RootLayout = () => {
+  // ✅ Wrap entire app inside Redux Provider
+  return (
+    <Provider store={store}>
+      <LayoutContent />
+    </Provider>
+  );
+};
+
+// ✅ Move all logic into a separate component inside <Provider>
+const LayoutContent = () => {
   const colorScheme = useColorScheme();
+  const dispatch = useAppDispatch(); // ✅ Now inside Provider
+
+  // ✅ Load fonts
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -52,4 +65,6 @@ export default function RootLayout() {
       </ThemeProvider>
     </Provider>
   );
-}
+};
+
+export default RootLayout;
