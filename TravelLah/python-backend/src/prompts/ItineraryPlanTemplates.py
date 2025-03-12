@@ -63,3 +63,4 @@ class PlannerPrompts:
         "Suggest a {pace}, {num_days} day trip to {destination} with {budget} budget. "
         "{party_size} people are going on the trip, splitting into {num_rooms} rooms. {notes}"
     )
+

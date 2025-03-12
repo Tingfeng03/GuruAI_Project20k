@@ -2,7 +2,7 @@ from src.agents.state import AgentState
 from src.services.llm import llm_service, Queries
 from src.services.tavilySearch import search_service
 from src.services.itinerary import planner_service
-from src.prompts.templates import PlannerPrompts
+from src.prompts.ItineraryPlanTemplates import PlannerPrompts
 from src.settings.logging import app_logger as logger
 from langchain_core.messages import HumanMessage, SystemMessage
 

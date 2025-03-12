@@ -36,3 +36,7 @@ class Itinerary(BaseModel):
 class ItineraryResponse(BaseModel):
     """Response schema for the API"""
     itinerary: Itinerary
+
+
+
+

@@ -2,7 +2,7 @@ from typing import Dict, Any
 from .llm import llm_service
 from .tavilySearch import search_service
 from ..settings.logging import app_logger as logger
-from ..prompts.templates import PlannerPrompts
+from ..prompts.ItineraryPlanTemplates import PlannerPrompts
 from langchain_community.adapters.openai import convert_openai_messages
 
 class PlannerService:
