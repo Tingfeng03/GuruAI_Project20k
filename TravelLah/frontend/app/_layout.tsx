@@ -1,24 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Drawer } from 'expo-router/drawer';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { Drawer } from "expo-router/drawer";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import "react-native-reanimated";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-import HeaderNav from '@/components/HeaderNav';
-import { CustomDrawerContent } from '@/components/CustomDrawerContent';
-import { drawerRoutes } from '@/config/drawerRoutes';
+import { useColorScheme } from "@/hooks/useColorScheme";
+import HeaderNav from "@/components/HeaderNav";
+import { CustomDrawerContent } from "@/components/CustomDrawerContent";
+import { drawerRoutes } from "@/config/drawerRoutes";
 
-// Import Redux
-import { Provider } from 'react-redux';
-import store from '../reducers/store';
+import { Provider } from "react-redux";
+import store from "../redux/store"; 
+import { useAppDispatch } from "../redux/hooks";
+import { setWeather } from "../redux/slices/weatherSlice";
+import { setItineraries } from "../redux/slices/itinerarySlice";
 
 SplashScreen.preventAutoHideAsync();
 
 const RootLayout = () => {
-  // ✅ Wrap entire app inside Redux Provider
   return (
     <Provider store={store}>
       <LayoutContent />
@@ -26,12 +27,10 @@ const RootLayout = () => {
   );
 };
 
-// ✅ Move all logic into a separate component inside <Provider>
 const LayoutContent = () => {
   const colorScheme = useColorScheme();
-  const dispatch = useAppDispatch(); // ✅ Now inside Provider
+  const dispatch = useAppDispatch();
 
-  // ✅ Load fonts
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -46,6 +45,7 @@ const LayoutContent = () => {
     const fetchItinerary = async () => {
       try {
         const response = await fetch("http://localhost:8080/api/itineraries");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         console.log("Fetched Itineraries:", data);
         dispatch(setItineraries(data));
@@ -61,6 +61,7 @@ const LayoutContent = () => {
         const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
 
         const response = await fetch(weatherURL);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         console.log("Fetched Weather:", data);
         dispatch(setWeather(data));
@@ -78,23 +79,21 @@ const LayoutContent = () => {
   }
 
   return (
-    <Provider store={store}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Drawer
-          drawerContent={(props) => <CustomDrawerContent {...props} />}
-          screenOptions={{
-            header: () => <HeaderNav />,
-            drawerPosition: 'left',
-            drawerType: 'slide',
-          }}
-        >
-          {drawerRoutes.map((route) => (
-            <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
-          ))}
-        </Drawer>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </Provider>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          header: () => <HeaderNav />,
+          drawerPosition: "left",
+          drawerType: "slide",
+        }}
+      >
+        {drawerRoutes.map((route) => (
+          <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
+        ))}
+      </Drawer>
+      <StatusBar style="auto" />
+    </ThemeProvider>
   );
 };
 
