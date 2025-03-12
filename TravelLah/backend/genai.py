@@ -345,16 +345,6 @@ def run_itinerary_flow(builder):
         raise ValueError("Final draft itinerary not found in any state.")
 
     print("Final draft itinerary (dict):", final_draft_dict)
-
-    trip_plan_url = ""
-
-    try:
-        response = requests.post(trip_plan_url, json=final_draft_dict)
-        
-        print("TripPlan POST status code:", response.status_code)
-        print("TripPlan response JSON:", response.json())
-    except requests.exceptions.RequestException as e:
-        print("Error posting to TripPlan:", e)
     
     return final_draft_dict
 
