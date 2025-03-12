@@ -20,6 +20,7 @@ import { setItineraries } from "../redux/slices/itinerarySlice";
 SplashScreen.preventAutoHideAsync();
 
 const RootLayout = () => {
+  // PROOF THAT I USE PROVIDERRRRR
   return (
     <Provider store={store}>
       <LayoutContent />
