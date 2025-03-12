@@ -317,6 +317,10 @@ async def create_itinerary(options: StreamOptions):
         return itinerary
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+
+
 
 @app.get("/")
 async def read_root():
