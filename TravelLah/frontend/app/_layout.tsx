@@ -14,7 +14,7 @@ import { drawerRoutes } from "@/config/drawerRoutes";
 import { Provider } from "react-redux";
 import store from "../redux/store"; 
 import { useAppDispatch } from "../redux/hooks";
-import { setWeather } from "../redux/slices/weatherSlice";
+// import { setWeather } from "../redux/slices/weatherSlice";
 import { setItineraries } from "../redux/slices/itinerarySlice";
 
 SplashScreen.preventAutoHideAsync();
@@ -55,24 +55,24 @@ const LayoutContent = () => {
       }
     };
 
-    const fetchWeather = async () => {
-      try {
-        const latitude = process.env.EXPO_PUBLIC_LATITUDE || "52.52";
-        const longitude = process.env.EXPO_PUBLIC_LONGITUDE || "13.41";
-        const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
+    // const fetchWeather = async (latitude:string, longtitude:string) => {
+    //   try {
+    //     // const latitude = process.env.EXPO_PUBLIC_LATITUDE || "52.52";
+    //     // const longitude = process.env.EXPO_PUBLIC_LONGITUDE || "13.41";
+    //     const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longtitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
 
-        const response = await fetch(weatherURL);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        console.log("Fetched Weather:", data);
-        dispatch(setWeather(data));
-      } catch (error) {
-        console.error("Error fetching weather:", error);
-      }
-    };
+    //     const response = await fetch(weatherURL);
+    //     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    //     const data = await response.json();
+    //     console.log("Fetched Weather:", data);
+    //     dispatch(setWeather(data));
+    //   } catch (error) {
+    //     console.error("Error fetching weather:", error);
+    //   }
+    // };
 
     fetchItinerary();
-    fetchWeather();
+    // fetchWeather();
   }, []);
 
   if (!loaded) {

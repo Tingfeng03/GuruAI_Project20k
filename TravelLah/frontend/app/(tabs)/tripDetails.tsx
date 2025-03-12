@@ -22,6 +22,26 @@ const TripDetails: React.FC = () => {
     );
   }
 
+  const fetchWeather = async (latitude: string, longtitude: string) => {
+    try {
+      // const latitude = process.env.EXPO_PUBLIC_LATITUDE || "52.52";
+      // const longitude = process.env.EXPO_PUBLIC_LONGITUDE || "13.41";
+      const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longtitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
+
+      const response = await fetch(weatherURL);
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      console.log("Fetched Weather:", data);
+      // dispatch(setWeather(data));
+    } catch (error) {
+      console.error("Error fetching weather:", error);
+    }
+  };
+
+  // have a forEach loop for activities
+  // scan if activities time falls in the fetchWeather... highlight the card with the color
+  // weather.json
+
   const { itinerary } = trip;
   const { travelLocation, tripSerialNo, tripFlow } = itinerary;
 
@@ -36,7 +56,6 @@ const TripDetails: React.FC = () => {
     <View style={styles.container}>
       <Text style={styles.title}>{travelLocation || "Unknown Location"}</Text>
       <Text style={styles.subtitle}>Trip Serial No: {tripSerialNo || "N/A"}</Text>
-
       <View style={styles.divider} />
 
       {tripFlow && tripFlow.length > 0 ? (
@@ -88,6 +107,18 @@ const TripDetails: React.FC = () => {
                             <Text style={styles.mapButtonText}>View on Map</Text>
                           </TouchableOpacity>
                         )}
+
+                        <TouchableOpacity
+                          // style={styles.mapButton}
+                          onPress={() =>
+                            // Implement your logic here
+                            // Open a modal, for 'user preference'
+                            // after finished await() 
+                            // update the State of this page, do a page refresh to update frontend (might not need a refresh)
+                          }
+                        >
+                          <Text style={styles.mapButtonText}>Regenerate Activities</Text>
+                        </TouchableOpacity>
                       </Card.Content>
                     </Card>
                   )}

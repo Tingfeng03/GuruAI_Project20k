@@ -27,6 +27,10 @@ export default function SearchPage() {
 
   const handleSearch = () => {
     console.log("Searching with trip data:", tripData);
+    //FIXME
+    // send prompt to Python backend.
+    // await() then update the Redux Provider
+    // Redirect to tripPlan.tsx
   };
 
   return (
