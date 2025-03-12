@@ -1,72 +1,83 @@
-import { useNavigation } from "@react-navigation/native";
-import React from "react";
-import {View, StyleSheet,  TouchableOpacity} from "react-native";
-import {Card, Text} from "react-native-paper";
-import { ScrollView } from "react-native";
-import { useDispatch } from "react-redux";
-import { navigateToTripFlow } from "./actions/navigationActions";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { Card, Text } from "react-native-paper";
+import { useRouter } from "expo-router";
 
-interface CardProps {
-    itinerary : {
-        tripSerialNo: number;
-        travelLocation : {
-            lat: number;
-            long: number;
-        };
-        duration : {
-            startDate : Date;
-            endDate : Date;
-        }
-        locationName : string;
-    }
+interface Trip {
+    id: string;
+    itinerary: {
+        tripSerialNo: string;
+        travelLocation: string;
+        latitude: number;
+        longitude: number;
+        tripFlow: { date: string; activityContent: any[] }[];
+    };
 }
-
 
 const getMapImageURL = (lat: number, long: number) => {
     return `https://static-maps.yandex.ru/1.x/?ll=${long},${lat}&z=15&l=map&size=600,300`;
 };
 
-
 const TripPlan: React.FC = () => {
-    const [data, setdata] = React.useState<CardProps[]>([]);
-    const dispatch = useDispatch();
+    const [itineraries, setItineraries] = useState<Trip[]>([]);
+    const router = useRouter(); // ✅ Use expo-router for navigation
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchData = async () => {
             try {
-                // TODO: replace with actual backend API
-                const response = await fetch(`https://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/TripPlan`);
-                const data: CardProps[] = await response.json();
-                setdata(data);
+                const response = await fetch("http://localhost:8080/api/itineraries"); // Change to your API URL
+                const data: Trip[] = await response.json();
+                setItineraries(data);
             } catch (error) {
-                console.error("Error fetching data: ", error);
-            } 
+                console.error("Error fetching itinerary:", error);
+            }
         };
         fetchData();
-    }, []); // this empty array ensures useEffect only run once, since we provide empty dependency
+    }, []);
 
     return (
-        // consider using FlatList if more than 20 items
         <View style={styles.container}>
-            <Text style={styles.title}>Your Upcoming Trip</Text>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                { 
-                    data.map((card: CardProps, index) => {
-                        const itinerary = card.itinerary;
-                        return (
-                            <TouchableOpacity onPress={() => dispatch(navigateToTripFlow(itinerary.tripSerialNo))}>
-                                <Card key={`${index}`} style={styles.card}>
-                                    <Card.Cover source={{uri: getMapImageURL(itinerary.travelLocation.lat, itinerary.travelLocation.long)}} />
-                                    <Card.Content>
-                                        <Text style={styles.address}>{itinerary.locationName}</Text>
-                                        <Text>{itinerary.duration.startDate.toDateString()} - {itinerary.duration.endDate.toDateString()}</Text>
-                                    </Card.Content>
-                                </Card>
-                            </TouchableOpacity>
-                        )
-                    })    
-                }
-            </ScrollView>
+            <Text style={styles.title}>Your Upcoming Trips</Text>
+
+            {itineraries.length === 0 ? (
+                <Text style={styles.noTrips}>No trips found</Text>
+            ) : (
+                <FlatList
+                    data={itineraries}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            onPress={() =>
+                                router.push({
+                                    pathname: "/tripDetails",
+                                    params: { trip: JSON.stringify(item) }, // ✅ Pass trip as JSON string
+                                })
+                            }
+                        >
+                            <Card style={styles.card}>
+                                <Card.Cover
+                                    source={{
+                                        uri: getMapImageURL(
+                                            item.itinerary.latitude,
+                                            item.itinerary.longitude
+                                        ),
+                                    }}
+                                />
+                                <Card.Content>
+                                    <Text style={styles.address}>
+                                        📍 {item.itinerary.travelLocation}
+                                    </Text>
+                                    <Text>
+                                        📅 {item.itinerary.tripFlow[0]?.date} -{" "}
+                                        {item.itinerary.tripFlow[item.itinerary.tripFlow.length - 1]
+                                            ?.date || "Unknown"}
+                                    </Text>
+                                </Card.Content>
+                            </Card>
+                        </TouchableOpacity>
+                    )}
+                />
+            )}
         </View>
     );
 };
@@ -76,9 +87,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#f8f9fa",
         padding: 16,
-    },
-    scrollContent: {
-        paddingBottom: 16,
     },
     card: {
         marginBottom: 16,
@@ -92,16 +100,22 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     title: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: "bold",
-        marginBottom: 8,
+        marginBottom: 12,
         color: "#333",
     },
     address: {
-        fontSize: 14,
-        color: "gray",
-        marginBottom: 4,
+        fontSize: 16,
+        color: "#444",
+        fontWeight: "bold",
     },
-})
+    noTrips: {
+        fontSize: 16,
+        color: "gray",
+        textAlign: "center",
+        marginTop: 20,
+    },
+});
 
 export default TripPlan;

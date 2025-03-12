@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import { Drawer } from 'expo-router/drawer';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -19,11 +19,30 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  const [itineraries, setItineraries] = useState([]);
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  useEffect(() => {
+    // Fetch Itinerary Data
+    const fetchItinerary = async () => {
+      try {
+        // Change it with .env ig
+        const response = await fetch('http://localhost:8080/api/itineraries'); // Change this if API is deployed
+        const data = await response.json();
+        console.log(data);
+        setItineraries(data);
+      } catch (error) {
+        console.error('Error fetching itinerary:', error);
+      }
+    };
+
+    fetchItinerary();
+  }, []);
 
   if (!loaded) {
     return null;
@@ -32,15 +51,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Drawer
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        drawerContent={(props) => <CustomDrawerContent {...props} itineraries={itineraries} />}
         screenOptions={{
           header: () => <HeaderNav />,
           drawerPosition: 'left',
           drawerType: 'slide',
         }}
       >
-        {/* Register the screens you want in the drawer in /frontend/config/drawerRoutes.ts */}
-
         {drawerRoutes.map((route) => (
           <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
         ))}
