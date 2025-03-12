@@ -72,6 +72,7 @@
 //     const { tripSerialNo } = useSelector((state: any) => state.navigation);
 //     const dispatch = useDispatch();
 
+<<<<<<< Updated upstream
 //     React.useEffect(() => {
 //         const fetchData = async () => {
 //             try {
@@ -85,6 +86,21 @@
 //         };
 //         fetchData();
 //     }, [tripSerialNo]); 
+=======
+    React.useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // TODO: replace with actual backend API
+                // const response = await fetch(`https://${process.env.EXPO_PUBLIC_LOCAL_FRONTEND_IP}:8080/api/TripFlow/${serialNo}`);
+                // const data: TripFlow[] = await response.json();
+                setdata([dummyTripFlow]);
+            } catch (error) {
+                console.error("Error fetching data: ", error);
+            } 
+        };
+        fetchData();
+    }, [tripSerialNo]); 
+>>>>>>> Stashed changes
 
 //     return (
 //         // consider using FlatList if more than 20 items

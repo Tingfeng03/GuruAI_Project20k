@@ -37,6 +37,7 @@ const TripPlan: React.FC = () => {
 
     return (
         <View style={styles.container}>
+<<<<<<< Updated upstream
             <Text style={styles.title}>Your Upcoming Trips</Text>
 
             {itineraries.length === 0 ? (
@@ -78,6 +79,27 @@ const TripPlan: React.FC = () => {
                     )}
                 />
             )}
+=======
+            <Text style={styles.title}>Your Upcoming Trip</Text>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                { 
+                    data.map((card: CardProps, index) => {
+                        const itinerary = card.itinerary;
+                        return (
+                            <TouchableOpacity onPress={() => dispatch(navigateToTripFlow(itinerary.tripSerialNo))}>
+                                <Card key={`${index}`} style={styles.card}>
+                                    <Card.Cover source={{uri: getMapImageURL(itinerary.travelLocation.lat, itinerary.travelLocation.long)}} />
+                                    <Card.Content>
+                                        <Text style={styles.address}>{itinerary.locationName}</Text>
+                                        <Text>{itinerary.duration.startDate.toDateString()} - {itinerary.duration.endDate.toDateString()}</Text>
+                                    </Card.Content>
+                                </Card>
+                            </TouchableOpacity>
+                        )
+                    })
+                }
+            </ScrollView>
+>>>>>>> Stashed changes
         </View>
     );
 };

@@ -16,6 +16,10 @@ import { TripProvider } from '@/Provider/TripContext';
 // import { Provider } from 'react-redux';
 // import store from '.';
 
+// Import Redux
+import { Provider } from 'react-redux';
+import store from '@/store/store'; // Ensure this path is correct
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -54,6 +58,7 @@ export default function RootLayout() {
   }
 
   return (
+<<<<<<< Updated upstream
     // <Provider store={store}>
     <TripProvider>
       <PaperProvider>
@@ -76,5 +81,25 @@ export default function RootLayout() {
     </TripProvider>
     // </Provider>
 
+=======
+    <Provider store={store}>
+      {/* Ensures Redux is available in all screens */}
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Drawer
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+          screenOptions={{
+            header: () => <HeaderNav />,
+            drawerPosition: 'left',
+            drawerType: 'slide',
+          }}
+        >
+          {drawerRoutes.map((route) => (
+            <Drawer.Screen key={route.name} name={route.name} options={{ title: route.label }} />
+          ))}
+        </Drawer>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </Provider>
+>>>>>>> Stashed changes
   );
 }

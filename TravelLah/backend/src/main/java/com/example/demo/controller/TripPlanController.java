@@ -1,28 +1,27 @@
-package com.example.demo.controller;
+// package com.example.demo.controller;
 
-import com.example.demo.model.TripPlan;
-import com.example.demo.Repository.TripPlanRepository;
+// import com.example.demo.model.TripPlan;
+// import com.example.demo.Repository.TripPlanRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+// import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+// import java.util.List;
 
+// @RestController
+// @RequestMapping("/api/TripPlan")
+// @CrossOrigin(origins = "*")
+// public class TripPlanController {
 
-@RestController
-@RequestMapping("/api/TripPlan")
-@CrossOrigin(origins = "*")
-public class TripPlanController {
+//     @Autowired
+//     private TripPlanRepository tripPlanRepository;
 
-    @Autowired
-    private TripPlanRepository tripPlanRepository;
+//     public TripPlanController(TripPlanRepository tripPlanRepository) {
+//         this.tripPlanRepository = tripPlanRepository;
+//     }
 
-    public TripPlanController(TripPlanRepository tripPlanRepository) {
-        this.tripPlanRepository = tripPlanRepository;
-    }
-
-    @GetMapping
-    public List<TripPlan> getAllTripPlans() {
-        return tripPlanRepository.findAll();
-    }
-}
+//     @GetMapping
+//     public List<TripPlan> getAllTripPlans() {
+//         return tripPlanRepository.findAll();
+//     }
+// }
