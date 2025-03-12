@@ -4,5 +4,6 @@ export const drawerRoutes = [
     { name: 'page1', label: 'Page 1', route: '(tabs)/page1'},
     { name: 'page2', label: 'Page 2', route: '(tabs)/page2'},
     { name: 'explore', label: 'Explore', route: '(tabs)/explore'},
+    { name: 'tripPlan', label: 'TripPlan', route: '(tabs)/tripPlan'},
   ];
   

@@ -2,8 +2,9 @@ import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import {View, StyleSheet,  TouchableOpacity} from "react-native";
 import {Card, Text} from "react-native-paper";
-import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
-
+import { ScrollView } from "react-native";
+import { useDispatch } from "react-redux";
+import { navigateToTripFlow } from "./actions/navigationActions";
 
 interface CardProps {
     itinerary : {
@@ -25,13 +26,10 @@ const getMapImageURL = (lat: number, long: number) => {
     return `https://static-maps.yandex.ru/1.x/?ll=${long},${lat}&z=15&l=map&size=600,300`;
 };
 
-const redirectTripFlow = (serialNo: number) => {
-   const navigation = useNavigation();
-   navigation.navigate('TripFlow', {serialNo});
-};
 
 const TripPlan: React.FC = () => {
     const [data, setdata] = React.useState<CardProps[]>([]);
+    const dispatch = useDispatch();
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -56,7 +54,7 @@ const TripPlan: React.FC = () => {
                     data.map((card: CardProps, index) => {
                         const itinerary = card.itinerary;
                         return (
-                            <TouchableOpacity onPress={() => redirectTripFlow(itinerary.tripSerialNo)}>
+                            <TouchableOpacity onPress={() => dispatch(navigateToTripFlow(itinerary.tripSerialNo))}>
                                 <Card key={`${index}`} style={styles.card}>
                                     <Card.Cover source={{uri: getMapImageURL(itinerary.travelLocation.lat, itinerary.travelLocation.long)}} />
                                     <Card.Content>
