@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Linking } from "rea
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
 
+import { weather } from "../../config/weather";
+import dayjs from "dayjs";
+
 const openGoogleMaps = (lat?: number, long?: number) => {
   if (!lat || !long) return;
   const url = `https://www.google.com/maps/search/?api=1&query=${lat},${long}`;
@@ -31,16 +34,59 @@ const TripDetails: React.FC = () => {
       const response = await fetch(weatherURL);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      console.log("Fetched Weather:", data);
-      // dispatch(setWeather(data));
+      
+      // dictionary of time and corresponding weather code
+      const weatherDict: {[key: string]: number} = {};
+      data.hourly.time.forEach((time: string, index: number) => {
+        const dayjsTime = dayjs(time).format("HH:mm");
+        weatherDict[dayjsTime] = data.hourly.weather_code[index];
+      })
+
+      console.log("Fetched Weather:", weatherDict);
+      return weatherDict;
     } catch (error) {
       console.error("Error fetching weather:", error);
+      return null;
     }
   };
 
   // have a forEach loop for activities
   // scan if activities time falls in the fetchWeather... highlight the card with the color
   // weather.json
+  const getCardColor = async (
+    date: any,
+    lat: any,
+    long: any,
+    start_time: any,
+    end_time: any
+  ): Promise<string> => {
+    const today = dayjs().format("YYYY-MM-DD");
+    if (date !== today) {
+      return "#FFFFFF"; // Return default color if the date is not today
+    }
+    try {
+      const weatherDict = await fetchWeather(lat, long);
+      if (!weatherDict) return "#FFFFFF"; // Return default color if weatherDict is null
+
+      const times = Object.keys(weatherDict);
+      const validTimes = times.filter((time) => time >= start_time && time <= end_time);
+
+      // use the first valid time
+      let selectedTime: string;
+      if (validTimes.length > 0) {
+        selectedTime = validTimes[0];
+      } else {
+        selectedTime = times.find((time) => time >= start_time) || start_time;
+      }
+
+      const weatherCode = weatherDict[selectedTime].toString();
+      const mappingEntry = weather[0][weatherCode as keyof typeof weather[0]]
+      return mappingEntry.style.color;
+    } catch (error) {
+      console.error("Error in getCardColor:", error);
+      return "#FFFFFF"; // Return default color in case of error
+    }
+  };
 
   const { itinerary } = trip;
   const { travelLocation, tripSerialNo, tripFlow } = itinerary;
@@ -80,7 +126,7 @@ const TripDetails: React.FC = () => {
                   data={item.activityContent}
                   keyExtractor={(activity, idx) => idx.toString()}
                   renderItem={({ item: activity }) => (
-                    <Card style={styles.activityCard}>
+                    <Card style={[styles.activityCard, {backgroundColor: await getCardColor(activity.date, activity.latitude, activity.longitude, activity.start_time, activity.end_time)}]}>
                       <Card.Content>
                         <Text style={styles.activityTitle}>
                           {activity.specific_location || "Unknown Place"}
