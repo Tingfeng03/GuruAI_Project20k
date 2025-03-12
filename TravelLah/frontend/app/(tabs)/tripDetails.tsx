@@ -108,7 +108,7 @@ const TripDetails: React.FC = () => {
                           </TouchableOpacity>
                         )}
 
-                        <TouchableOpacity
+                        {/* <TouchableOpacity
                           // style={styles.mapButton}
                           onPress={() =>
                             // Implement your logic here
@@ -118,7 +118,7 @@ const TripDetails: React.FC = () => {
                           }
                         >
                           <Text style={styles.mapButtonText}>Regenerate Activities</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                       </Card.Content>
                     </Card>
                   )}
