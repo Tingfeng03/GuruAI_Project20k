@@ -67,7 +67,14 @@ class PlannerService:
             Generated itinerary in JSON format
         """
         # Build system prompt
-        sysmsg = PlannerPrompts.ITINERARY_GENERATOR
+        sysmsg = (
+            f"{PlannerPrompts.persona}\n"
+            f"{PlannerPrompts.task}\n"
+            f"{PlannerPrompts.context_prompt}\n"
+            f"{PlannerPrompts.condition}\n"
+            f"{PlannerPrompts.activity_context}\n"
+            f"{PlannerPrompts.format_condition}"
+        )
 
         retrieval_context = ""
         tavily_response = self.tavily.search(query=query_text, max_results=2)

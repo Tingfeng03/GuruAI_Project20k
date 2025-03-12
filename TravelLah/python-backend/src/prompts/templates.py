@@ -23,16 +23,38 @@ class PlannerPrompts:
         "queries and answers that were previously used:\nQUERIES:\n{queries}\n\nANSWERS:\n{answers}"
     )
     
-    ITINERARY_GENERATOR = (
-        "You are an expert travel planner known for creating extremely well thought out, thorough, and personalized itineraries that follow a "
-        "logically sequenced, realistically timed and time-conscious schedule.\n"
-        "Analyze the following user input and produce a final itinerary. The itinerary must be detailed and organized day-by-day. "
-        "Each day should include a header, and for that day provide a list of recommended activities that covers 3 meals and 3 activities. "
-        "For each activity, include the start time, end time, and specify if it is an 'indoor' or 'outdoor' activity. Also include any relevant notes.\n"
-        "Include relevant local insights, destination-specific details, and tailored recommendations in your response.\n"
-        "Your final output must be valid JSON with exactly one key: 'itinerary'. The 'itinerary' object must have the keys 'userId', "
-        "'tripSerialNo', 'TravelLocation', 'latitude', 'longitude', and 'tripFlow'. 'tripFlow' is a JSON array, with each element being an object containing the keys "
-        "'date' and 'activity content'. 'activity content' is a JSON array where each element must include the keys: 'specific_location', "
-        "'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type', and 'notes'. You must provide a concrete, non-placeholder value for every attribute based on available data or best estimates. Do not use placeholder text such as 'To be specified' or similar wording. 'activity_type' should only have the values 'indoor' or 'outdoor'.\n"
-        "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions."
+    persona = (
+        "You are an expert travel planner known for creating extremely well thought out, detailed, and personalized itineraries that follow a "
+        "logically sequenced, realistically timed and time-conscious schedule."
+    )
+
+    task = (
+        "Analyze the following user input and produce the following section in your final output:\n"
+        #"1. **Chain-of-Thought (CoT) Reasoning:** Provide a detailed, step-by-step explanation of your planning process.\n"
+        "1. **Final Itinerary:** Deliver a detailed, day-by-day itinerary. Every single day should have a header, a list of recommended activities"
+        " that covers 3 meals and 3 activities, and notes."
+    )
+
+    condition = (
+        #"Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where "
+        "Your final output must be valid JSON 'itinerary' it has the keys 'userId',"
+        "'tripSerialNo', 'TravelLocation', 'latitute', 'longitude', 'start-date', 'end-date' and 'tripFlow'."
+    )
+
+    activity_context = (
+        " tripFlow' is a JSON array, with each element containing the keys"
+        " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys: 'activityId', 'specific_location', " \
+        " 'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type' and 'notes'. 'activityId' is an integer and corresponds to the activity's index in that day's JSON array"
+        " and 'activity_type' is a either 'indoor' or 'outdoor'."
+    )
+
+    context_prompt = (
+        "Include relevant local and practical insights, destination-specific details, and tailored recommendations in your response. If the desired list of activities from the user has" \
+        "already been satisfied, explore other variety of activities."
+    )
+    
+    format_condition = (
+        "All mentioned JSON structures must exactly match the keys and structure described above, with no omissions. All days must abide by the format provided, no omissions." \
+        "All JSON structures and elements in the JSON array must be filled. No texts are allowed outside of any JSON structures." \
+        "All JSON structures must not have duplicate keys."
     )
