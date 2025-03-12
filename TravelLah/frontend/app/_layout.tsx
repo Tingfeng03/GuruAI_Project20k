@@ -13,7 +13,7 @@ import { drawerRoutes } from '@/config/drawerRoutes';
 
 // Import Redux
 import { Provider } from 'react-redux';
-import store from '@/store/store';
+import store from '../reducers/store';
 
 SplashScreen.preventAutoHideAsync();
 
