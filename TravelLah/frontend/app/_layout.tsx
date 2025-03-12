@@ -33,7 +33,7 @@ const LayoutContent = () => {
 
   // ✅ Load fonts
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   useEffect(() => {
@@ -41,6 +41,37 @@ const LayoutContent = () => {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  useEffect(() => {
+    const fetchItinerary = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/itineraries");
+        const data = await response.json();
+        console.log("Fetched Itineraries:", data);
+        dispatch(setItineraries(data));
+      } catch (error) {
+        console.error("Error fetching itinerary:", error);
+      }
+    };
+
+    const fetchWeather = async () => {
+      try {
+        const latitude = process.env.EXPO_PUBLIC_LATITUDE || "52.52";
+        const longitude = process.env.EXPO_PUBLIC_LONGITUDE || "13.41";
+        const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
+
+        const response = await fetch(weatherURL);
+        const data = await response.json();
+        console.log("Fetched Weather:", data);
+        dispatch(setWeather(data));
+      } catch (error) {
+        console.error("Error fetching weather:", error);
+      }
+    };
+
+    fetchItinerary();
+    fetchWeather();
+  }, []);
 
   if (!loaded) {
     return null;
