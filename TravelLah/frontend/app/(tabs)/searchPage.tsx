@@ -21,7 +21,7 @@ export default function SearchPage() {
       ? `${formatDate(tripData.checkIn)} - ${formatDate(tripData.checkOut)}`
       : "";
 
-  const handleInputChange = (field: keyof typeof tripData, value: string) => {
+  const handleInputChange = (field: string, value: string) => {
     dispatch(setTripData({ [field]: value }));
   };
 
@@ -32,22 +32,22 @@ export default function SearchPage() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.description}>Our AI will generate your Trip Plan</Text>
+        <Text style={styles.description}>Our AI will help you generate the most related Trip Plan</Text>
         <Card style={styles.card}>
           <Card.Content>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/destinationSearch")} style={styles.touchableContainer}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/destinationSearch")} activeOpacity={0.8} style={styles.touchableContainer}>
               <TextInput label="Destination / Hotel Name" mode="outlined" value={tripData.destination} editable={false} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.push("/(tabs)/selectDate")} style={styles.touchableContainer}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/selectDate")} activeOpacity={0.8} style={styles.touchableContainer}>
               <TextInput label="Travel Duration" mode="outlined" value={travelDurationDisplay} editable={false} right={<TextInput.Icon icon="calendar" />} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.push("/(tabs)/guestAndRoom")} style={styles.touchableContainer}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/guestAndRoom")} activeOpacity={0.8} style={styles.touchableContainer}>
               <TextInput
                 label="Guests and Rooms"
                 mode="outlined"
-                value={`Adults: ${tripData.guestsAndRooms.adults} | Children: ${tripData.guestsAndRooms.children} | Rooms: ${tripData.guestsAndRooms.rooms}`}
+                value={`Adults: ${tripData.guestsAndRooms.adults} Children: ${tripData.guestsAndRooms.children} Rooms: ${tripData.guestsAndRooms.rooms}`}
                 editable={false}
                 right={<TextInput.Icon icon="account-multiple" />}
               />
