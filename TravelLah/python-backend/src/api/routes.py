@@ -9,7 +9,7 @@ from .ItinerarySchemas import  StreamOptions as SteamPlanOptions
 
 from .ItinerarySchemas import ItineraryResponse
 
-from .ItinerarySchemas import  StreamOptions as SteamUPdatePlanOptions
+from .ItineraryUpdateSchemas import  StreamOptions as SteamUpdatePlanOptions
 
 
 from src.settings.logging import app_logger
@@ -38,7 +38,6 @@ async def create_itinerary(payload: Dict[str, Any]):
     
     Args:
         options: StreamOptions object with task and parameters
-        
     Returns:
         Generated itinerary
     """
@@ -77,20 +76,27 @@ async def create_itinerary(payload: Dict[str, Any]):
         raise HTTPException(status_code=400, detail=error_msg)
     
 
+
+
+
 #  update(self, trip_id: str, activity_id: int, updated_activity: dict) -> bool:
 @app.patch("/updateActivity")
 async def update_activity(payload: Dict[str, Any]):
-    transformed_payload = transform_frontend_to_backend_format(payload)
-    itinerary_params = transformed_payload.get("itinerary_params", {})
+    ##transformed_payload = transform_frontend_to_backend_format(payload)
 
-    options = SteamUPdatePlanOptions(
+
+
+
+    #activity_params = transformed_payload.get("activity_params", {})
+    activity_params = payload
+    options = SteamUpdatePlanOptions(
         task="",  # Default value
         max_revisions=1,  # Example default
         revision_number=1,  # Example default
-        itinerary_params=itinerary_params
+        activity_params=activity_params
     )
 
-    app_logger.info(f"Received itinerary request with params: {itinerary_params}")   
+    app_logger.info(f"Received itinerary request with params: {activity_params}")   
     try:
         # Convert Pydantic model to dict
         stream_options = options.model_dump()
