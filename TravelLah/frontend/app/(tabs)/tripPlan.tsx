@@ -10,8 +10,8 @@ interface Trip {
   TravelLocation?: string;
   latitude?: number;
   longitude?: number;
-  "start-date"?: string;
-  "end-date"?: string;
+  "startDate"?: string;
+  "endDate"?: string;
   tripFlow?: { date: string; activityContent: any[] }[];
 }
 
@@ -30,6 +30,8 @@ const TripPlan: React.FC = () => {
         const response = await fetch("http://localhost:8080/api/tripplans");
         const data: Trip[] = await response.json();
         setItineraries(data);
+
+        console.log("DATTAAAAA:", data);
       } catch (error) {
         console.error("Error fetching itinerary:", error);
       }
@@ -49,7 +51,7 @@ const TripPlan: React.FC = () => {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
             const mapURL = getMapImageURL(item.latitude, item.longitude);
-
+            console.log("ITEMM: ", item);
             return (
               <TouchableOpacity
                 onPress={() =>
@@ -73,7 +75,7 @@ const TripPlan: React.FC = () => {
                     </Text>
                     <Text>
                       {/* If you store start/end date in top-level fields */}
-                      📅 {item["start-date"] || "??"} - {item["end-date"] || "??"}
+                      📅 {item["startDate"] || "??"} - {item["endDate"] || "??"}
                     </Text>
                   </Card.Content>
                 </Card>

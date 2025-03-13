@@ -15,7 +15,7 @@ export default function HeaderNav() {
         <Ionicons name="menu" size={28} color={colors.text} />
       </Pressable>
       <ThemedText type="default" style={{ color: colors.text }}>
-        LOGO HERE LA CB
+        TRAVELAH
       </ThemedText>
     </View>
   );

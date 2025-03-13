@@ -2,29 +2,38 @@ package com.example.demo.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.Date;
+// import java.util.Date;
 import java.util.List;
 
 @Document(collection = "UserItinerary")
 public class TripPlan {
     @Id
     private String id;
-
+    
+    @Field("tripSerialNo")
     private String tripSerialNo;
-    private String travelLocation;
-    private double latitude;
-    private double longitude;
-    private Date startDate;
-    private Date endDate;
 
-    private List<TripFlow> tripFlow; // Day-by-day activities
+    @Field("TravelLocation")
+    private String travelLocation;
+    private String latitude;
+    private String longitude;
+
+    @Field("start-date")
+    private String startDate;
+
+    @Field("end-date")
+    private String endDate;
+
+    @Field("tripFlow")
+    private List<TripFlow> tripFlow;
 
     public TripPlan() {
     }
 
-    public TripPlan(String id, String tripSerialNo, String travelLocation, double latitude,
-            double longitude, Date startDate, Date endDate, List<TripFlow> tripFlow) {
+    public TripPlan(String id, String tripSerialNo, String travelLocation, String latitude,
+            String longitude, String startDate, String endDate, List<TripFlow> tripFlow) {
         this.id = id;
         this.tripSerialNo = tripSerialNo;
         this.travelLocation = travelLocation;
@@ -60,35 +69,35 @@ public class TripPlan {
         this.travelLocation = travelLocation;
     }
 
-    public double getLatitude() {
+    public String getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(double latitude) {
+    public void setLatitude(String latitude) {
         this.latitude = latitude;
     }
 
-    public double getLongitude() {
+    public String getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(double longitude) {
+    public void setLongitude(String longitude) {
         this.longitude = longitude;
     }
 
-    public Date getStartDate() {
+    public String getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(Date startDate) {
+    public void setStartDate(String startDate) {
         this.startDate = startDate;
     }
 
-    public Date getEndDate() {
+    public String getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(Date endDate) {
+    public void setEndDate(String endDate) {
         this.endDate = endDate;
     }
 
