@@ -50,7 +50,7 @@ def generation_node(state: AgentState):
     activity_params = state.get("activity_params", {})
     dynamic_query = planner_service.travel_agent_planner.build_dynamic_activity_query(activity_params)
     
-    refined_activity = planner_service.travel_agent_planner.generate_refined_activity(dynamic_query)
+    refined_activity = planner_service.travel_agent_planner.generate_refined_activity(dynamic_query, activity_params)
     
     print("**********************************************************")
     print("Dynamic activity Query: ")
