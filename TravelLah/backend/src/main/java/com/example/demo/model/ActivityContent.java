@@ -1,22 +1,13 @@
 package com.example.demo.model;
 
-import org.springframework.data.mongodb.core.mapping.Field;
-
 public class ActivityContent {
 
-    @Field("specific_location")
     private String specificLocation;
     private String address;
     private String latitude;
     private String longitude;
-
-    @Field("start_time")
     private String startTime;
-
-    @Field("end_time")
     private String endTime;
-
-    @Field("activityType")
     private String activityType;
     private String notes;
 

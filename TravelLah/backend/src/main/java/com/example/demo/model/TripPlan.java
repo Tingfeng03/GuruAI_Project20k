@@ -2,7 +2,7 @@ package com.example.demo.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
+// import org.springframework.data.mongodb.core.mapping.Field;
 
 // import java.util.Date;
 import java.util.List;
@@ -11,22 +11,12 @@ import java.util.List;
 public class TripPlan {
     @Id
     private String id;
-    
-    // @Field("tripSerialNo")
     private String tripSerialNo;
-
-    // @Field("TravelLocation")
     private String travelLocation;
     private String latitude;
     private String longitude;
-
-    // @Field("start-date")
     private String startDate;
-
-    // @Field("end-date")
     private String endDate;
-
-    // @Field("tripFlow")
     private List<TripFlow> tripFlow;
 
     public TripPlan() {
