@@ -85,10 +85,8 @@ const TripDetails: React.FC = () => {
       }
       const data = await response.json();
 
-      // Determine which hour's weather to use
       let chosenIndex = 0;
       if (startTime) {
-        // e.g. "2025-01-01T10:00"
         const target = `${date}T${startTime}`;
         const idx = data.hourly.time.indexOf(target);
         if (idx >= 0) chosenIndex = idx;
@@ -109,14 +107,12 @@ const TripDetails: React.FC = () => {
     }
   };
 
-  // Expand/collapse day
   const toggleExpand = async (dayIndex: number, dayItem: TripFlow) => {
     setExpandedDays((prev) => ({
       ...prev,
       [dayIndex]: !prev[dayIndex],
     }));
 
-    // If newly expanded, fetch weather
     if (!expandedDays[dayIndex] && dayItem.activityContent) {
       try {
         const dayWeathers: { [activityIndex: number]: any } = {};
