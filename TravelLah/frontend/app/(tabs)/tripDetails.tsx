@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Linking, // 1) Import Linking from React Native
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
 import { weather as weatherMapping } from "../../config/weather";      // existing mapping for color/desc
@@ -37,10 +44,7 @@ const TripDetails: React.FC = () => {
   const params = useLocalSearchParams();
   const trip: Trip | null = params.trip ? JSON.parse(params.trip as string) : null;
 
-  // Which days are expanded
   const [expandedDays, setExpandedDays] = useState<{ [dayIndex: number]: boolean }>({});
-
-  // Weather data: { dayIndex: { activityIndex: <data> } }
   const [weatherData, setWeatherData] = useState<{
     [dayIndex: number]: { [activityIndex: number]: any };
   }>({});
@@ -52,6 +56,16 @@ const TripDetails: React.FC = () => {
       </View>
     );
   }
+
+  // 2) Helper to open Google Maps for a specific lat/lng
+  const openInGoogleMaps = (latitude?: string | number, longitude?: string | number) => {
+    if (!latitude || !longitude) return;
+    const latStr = String(latitude);
+    const lngStr = String(longitude);
+    // This URL scheme opens Google Maps (or browser if Maps is unavailable):
+    const url = `https://www.google.com/maps/search/?api=1&query=${latStr},${lngStr}`;
+    Linking.openURL(url);
+  };
 
   // Fetch weather from Open-Meteo
   const fetchActivityWeather = async (
@@ -174,7 +188,7 @@ const TripDetails: React.FC = () => {
                     const weatherDesc = mapping?.description || "Unknown";
                     const weatherColor = mapping?.style?.color || "#000";
 
-                    // The emoji icon from weatherIcons
+                    // The emoji icon from weatherIcons (already in your code)
                     const icon = weatherIcons[codeStr] || "❓";
 
                     return (
@@ -207,6 +221,14 @@ const TripDetails: React.FC = () => {
                               <Text>Windspeed: {wData.windspeed} m/s</Text>
                             </View>
                           )}
+
+                          {/* 3) "Open in Google Maps" button */}
+                          <TouchableOpacity
+                            style={styles.mapButton}
+                            onPress={() => openInGoogleMaps(activity.latitude, activity.longitude)}
+                          >
+                            <Text style={styles.mapButtonText}>Open in Google Maps</Text>
+                          </TouchableOpacity>
                         </Card.Content>
                       </Card>
                     );
@@ -252,6 +274,18 @@ const styles = StyleSheet.create({
   notes: { fontSize: 12, color: "#777", marginTop: 4 },
   weatherRow: {
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  mapButton: {
+    marginTop: 10,
+    backgroundColor: "#4285F4",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    alignSelf: "flex-start",
+  },
+  mapButtonText: {
+    color: "#fff",
     fontWeight: "bold",
   },
 });
