@@ -1,17 +1,17 @@
-// app/destination-search.tsx
-import React, { useState, useRef, useContext } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, TextInput, List, ActivityIndicator, Button } from 'react-native-paper';
-import { useRouter } from 'expo-router';
-import { TripContext } from '../../Provider/TripContext';
+import React, { useState, useRef } from "react";
+import { View, StyleSheet } from "react-native";
+import { Text, TextInput, List, ActivityIndicator, Button } from "react-native-paper";
+import { useRouter } from "expo-router";
+import { useDispatch } from "react-redux";
+import { setTripData } from "../../redux/slices/tripSlice";
 
 export default function DestinationSearchPage() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
-  const { setTripData } = useContext(TripContext);
+  const dispatch = useDispatch();
 
   const handleChange = (text: string) => {
     setQuery(text);
@@ -24,10 +24,10 @@ export default function DestinationSearchPage() {
           const response = await fetch(
             `https://wft-geo-db.p.rapidapi.com/v1/geo/cities?namePrefix=${text}`,
             {
-              method: 'GET',
+              method: "GET",
               headers: {
-                'X-RapidAPI-Key': process.env.EXPO_PUBLIC_RAPIDAPI_KEY || 'YOUR_API_KEY_HERE',
-                'X-RapidAPI-Host': 'wft-geo-db.p.rapidapi.com',
+                "X-RapidAPI-Key": process.env.EXPO_PUBLIC_RAPIDAPI_KEY || "",
+                "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com",
               },
             }
           );
@@ -36,7 +36,7 @@ export default function DestinationSearchPage() {
             setSuggestions(data.data);
           }
         } catch (error) {
-          console.error('Error fetching suggestions:', error);
+          console.error("Error fetching suggestions:", error);
         } finally {
           setLoading(false);
         }
@@ -47,23 +47,14 @@ export default function DestinationSearchPage() {
   };
 
   const handleSelect = (city: string) => {
-    setTripData({ destination: city });
-    router.push('/(tabs)/searchPage');
+    dispatch(setTripData({ destination: city }));
+    router.push("/(tabs)/searchPage");
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Search Destination</Text>
-      <TextInput
-        label="Type a city or region"
-        mode="outlined"
-        value={query}
-        onChangeText={handleChange}
-        style={styles.input}
-        // theme={{
-        //   colors: { text: '#000', primary: '#000', placeholder: '#666', background: '#fff' },
-        // }}
-      />
+      <TextInput label="Type a city or region" mode="outlined" value={query} onChangeText={handleChange} style={styles.input} />
       {loading ? (
         <ActivityIndicator animating={true} size="small" style={styles.loadingIndicator} color="#000" />
       ) : (
@@ -78,7 +69,7 @@ export default function DestinationSearchPage() {
           />
         ))
       )}
-      <Button mode="outlined" onPress={() => router.push('/(tabs)/searchPage')} style={styles.cancelButton}>
+      <Button mode="outlined" onPress={() => router.push("/(tabs)/searchPage")} style={styles.cancelButton}>
         Cancel
       </Button>
     </View>
@@ -87,10 +78,10 @@ export default function DestinationSearchPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { fontSize: 22, marginBottom: 12, fontWeight: 'bold' },
+  header: { fontSize: 22, marginBottom: 12, fontWeight: "bold" },
   input: { marginBottom: 12 },
   loadingIndicator: { marginVertical: 10 },
   cancelButton: { marginTop: 20 },
-  listItemTitle: { fontSize: 16, fontWeight: '600' },
+  listItemTitle: { fontSize: 16, fontWeight: "600" },
   listItemDescription: { fontSize: 14 },
 });
