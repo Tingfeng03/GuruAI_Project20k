@@ -11,6 +11,11 @@ def transform_frontend_to_backend_format(payload):
     
     # Format dates as YYYY-MM-DD to YYYY-MM-DD
     formatted_dates = f"{check_in.strftime('%Y-%m-%d')} to {check_out.strftime('%Y-%m-%d')}"
+    print(formatted_dates)
+
+    start_date=str(check_in.strftime('%Y-%m-%d'))
+    end_date = str(check_out.strftime('%Y-%m-%d'))
+
     
     # Extract guest and room information
     guests_and_rooms = payload.get("guestsAndRooms", {})
@@ -18,7 +23,7 @@ def transform_frontend_to_backend_format(payload):
     num_rooms = guests_and_rooms.get("rooms", 1)
     
     # Map budget value to budget category (you may need to adjust these thresholds)
-    budget_value = str(payload.get("budget", "moderate"))
+    #budget_value = str(payload.get("budget", "moderate"))
     # budget_category = "budget"
     # if budget_value > 5000:
     #     budget_category = "luxury"
@@ -31,7 +36,9 @@ def transform_frontend_to_backend_format(payload):
         "tripId": "T123",  # This could be generated or retrieved from elsewhere
         "destination": payload.get("destination", ""),
         "num_days": num_days,
-        "dates": formatted_dates,
+        # "dates": formatted_dates,
+        "start_date": start_date,
+        "end_date":end_date,
         "party_size": party_size,
         "num_rooms": num_rooms,
         "budget": payload.get("budget", ""),

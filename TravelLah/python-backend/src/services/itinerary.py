@@ -36,7 +36,7 @@ class PlannerService:
         activities = itinerary_params.get("activities", "varied activities")
         food = itinerary_params.get("food", "local cuisine")
         pace = itinerary_params.get("pace", "relaxed")
-        notes = itinerary_params.get("notes", "")
+        notes = itinerary_params.get("additionalNotes", "")
         
         query_parts = [
             f"User ID: {userId}",
