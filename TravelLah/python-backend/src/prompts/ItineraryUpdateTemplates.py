@@ -31,8 +31,8 @@ class ItineraryUpdatePrompts:
         "of the kind of activity they were intending to do, time frame and other general preferences." #maybe include budget and travel party size
     )
     condition = (
-        "Your final output must be valid JSON 'activity' it has the keys 'activityId', 'specific_location', 'address', 'latitute', "
-        "'longitude', 'start_time', 'end_time', 'activity_type' and 'notes'. 'activity_type' is a either 'indoor' or 'outdoor'. 'activityId' is an identical" \
+        "Your final output must be valid JSON 'activity' it has the keys 'activityId', 'specificLocation', 'address', 'latitute', "
+        "'longitude', 'startTime', 'endTime', 'activityType' and 'notes'. 'activityType' is a either 'indoor' or 'outdoor'. 'activityId' is an identical" \
         " integer to the 'activityId' is passed in by the customer's input"
     )
     format_condition = (

@@ -38,14 +38,14 @@ class PlannerPrompts:
     condition = (
         #"Your final output must be valid JSON with exactly two keys: 'chain_of_thought' and 'itinerary' where "
         "Your final output must be valid JSON 'itinerary' it has the keys 'userId',"
-        "'tripSerialNo', 'travelLocation', 'latitute', 'longitude', 'start-date', 'end-date' and 'tripFlow'."
+        "'tripSerialNo', 'travelLocation', 'latitute', 'longitude', 'startDate', 'endDate' and 'tripFlow'."
     )
 
     activity_context = (
         " tripFlow' is a JSON array, with each element containing the keys"
-        " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys: 'activityId', 'specific_location', " \
-        " 'address', 'latitude', 'longitude', 'start_time', 'end_time', 'activity_type' and 'notes'. 'activityId' is an integer and corresponds to the activity's index in that day's JSON array"
-        " and 'activity_type' is a either 'indoor' or 'outdoor'."
+        " 'date', 'activity content'. 'activity content is a JSON array, with each element containing the keys: 'activityId', 'specificLocation', " \
+        " 'address', 'latitude', 'longitude', 'startTime', 'endTime', 'activityType' and 'notes'. 'activityId' is an integer and corresponds to the activity's index in that day's JSON array"
+        " and 'activityType' is a either 'indoor' or 'outdoor'."
     )
 
     context_prompt = (
