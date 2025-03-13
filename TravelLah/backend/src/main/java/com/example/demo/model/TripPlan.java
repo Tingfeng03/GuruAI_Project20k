@@ -4,25 +4,38 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
+import java.util.List;
 
-@Document(collection = "tripPlans")
-public class TripPlan { 
+@Document(collection = "UserItinerary")
+public class TripPlan {
     @Id
     private String id;
-    private String tripSerialNo;
-    private TravelLocation travelLocation;
-    private Duration duration;
-    private String locationName;
 
-    public TripPlan(String id, String tripSerialNo, TravelLocation travelLocation, Duration duration, String locationName) {
+    private String tripSerialNo;
+    private String travelLocation;
+    private double latitude;
+    private double longitude;
+    private Date startDate;
+    private Date endDate;
+
+    private List<TripFlow> tripFlow; // Day-by-day activities
+
+    public TripPlan() {
+    }
+
+    public TripPlan(String id, String tripSerialNo, String travelLocation, double latitude,
+            double longitude, Date startDate, Date endDate, List<TripFlow> tripFlow) {
         this.id = id;
         this.tripSerialNo = tripSerialNo;
         this.travelLocation = travelLocation;
-        this.duration = duration;
-        this.locationName = locationName;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.tripFlow = tripFlow;
     }
 
-    // Getters and setters
+    // Getters/Setters
     public String getId() {
         return id;
     }
@@ -39,73 +52,51 @@ public class TripPlan {
         this.tripSerialNo = tripSerialNo;
     }
 
-    public TravelLocation getTravelLocation() {
+    public String getTravelLocation() {
         return travelLocation;
     }
 
-    public void setTravelLocation(TravelLocation travelLocation) {
+    public void setTravelLocation(String travelLocation) {
         this.travelLocation = travelLocation;
     }
 
-    public Duration getDuration() {
-        return duration;
+    public double getLatitude() {
+        return latitude;
     }
 
-    public void setDuration(Duration duration) {
-        this.duration = duration;
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 
-    public String getLocationName() {
-        return locationName;
+    public double getLongitude() {
+        return longitude;
     }
 
-    public void setLocationName(String locationName) {
-        this.locationName = locationName;
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
-    public class TravelLocation {
-        private double lat;
-        private double lon;
-
-        // Getters and setters
-
-        public double getLat() {
-            return lat;
-        }
-
-        public void setLat(double lat) {
-            this.lat = lat;
-        }
-
-        public double getLon() {
-            return lon;
-        }
-
-        public void setLon(double lon) {
-            this.lon = lon;
-        }
+    public Date getStartDate() {
+        return startDate;
     }
 
-    public static class Duration {
-        private Date startDate;
-        private Date endDate;
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
 
-        // Getters and setters
+    public Date getEndDate() {
+        return endDate;
+    }
 
-        public Date getStartDate() {
-            return startDate;
-        }
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
 
-        public void setStartDate(Date startDate) {
-            this.startDate = startDate;
-        }
+    public List<TripFlow> getTripFlow() {
+        return tripFlow;
+    }
 
-        public Date getEndDate() {
-            return endDate;
-        }
-
-        public void setEndDate(Date endDate) {
-            this.endDate = endDate;
-        }
+    public void setTripFlow(List<TripFlow> tripFlow) {
+        this.tripFlow = tripFlow;
     }
 }

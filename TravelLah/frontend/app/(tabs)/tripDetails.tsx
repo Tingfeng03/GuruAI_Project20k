@@ -1,26 +1,51 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Linking } from "react-native";
+import { View, StyleSheet, TouchableOpacity, FlatList, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { Card } from "react-native-paper";
-<<<<<<< Updated upstream
-=======
+import { Card, Text } from "react-native-paper";
 import dayjs from "dayjs";
 import { weather } from "../../config/weather";
->>>>>>> Stashed changes
 
-const openGoogleMaps = (lat?: number, long?: number) => {
-  if (!lat || !long) return;
-  const url = `https://www.google.com/maps/search/?api=1&query=${lat},${long}`;
+const openGoogleMaps = (lat?: number, lng?: number) => {
+  if (lat == null || lng == null) return;
+  const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   Linking.openURL(url);
 };
 
+interface ActivityContent {
+  specific_location?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  start_time?: string;
+  end_time?: string;
+  activity_type?: string;
+  notes?: string;
+}
+
+interface TripFlow {
+  date: string;
+  activityContent: ActivityContent[];
+}
+
+interface Trip {
+  id: string;
+  userId?: string;
+  tripSerialNo?: string;
+  TravelLocation?: string;
+  latitude?: number;
+  longitude?: number;
+  ["start-date"]?: string;
+  ["end-date"]?: string;
+  tripFlow?: TripFlow[];
+}
+
 const TripDetails: React.FC = () => {
   const params = useLocalSearchParams();
-  const trip = params.trip ? JSON.parse(params.trip as string) : null;
+  const trip: Trip | null = params.trip ? JSON.parse(params.trip as string) : null;
   const [expandedDays, setExpandedDays] = useState<{ [key: number]: boolean }>({});
   const [activityColors, setActivityColors] = useState<{ [key: string]: string }>({});
 
-  if (!trip || !trip.itinerary) {
+  if (!trip) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>No trip details available.</Text>
@@ -28,68 +53,67 @@ const TripDetails: React.FC = () => {
     );
   }
 
-  const fetchWeather = async (latitude: number, longitude: number) => {
+  const today = dayjs().format("YYYY-MM-DD");
+
+  const fetchWeather = async (lat: number, lng: number) => {
     try {
-      const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
-      const response = await fetch(weatherURL);
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=weather_code&current_weather=true&forecast_days=1`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-<<<<<<< Updated upstream
-      console.log("Fetched Weather:", data);
-      // dispatch(setWeather(data));
-=======
 
-      const weatherDict: { [key: string]: number } = {};
-      data.hourly.time.forEach((time: string, index: number) => {
-        const formattedTime = dayjs(time).format("HH:mm");
-        weatherDict[formattedTime] = data.hourly.weather_code[index];
+      const weatherDict: { [time: string]: number } = {};
+      data.hourly.time.forEach((timeStr: string, index: number) => {
+        const timeHHmm = dayjs(timeStr).format("HH:mm");
+        weatherDict[timeHHmm] = data.hourly.weather_code[index];
       });
-
       return weatherDict;
->>>>>>> Stashed changes
     } catch (error) {
       console.error("Error fetching weather:", error);
+      return null;
     }
   };
 
-<<<<<<< Updated upstream
-  // have a forEach loop for activities
-  // scan if activities time falls in the fetchWeather... highlight the card with the color
-  // weather.json
-=======
-  const getCardColor = (weatherDict: { [key: string]: number } | null, startTime: string, endTime: string) => {
-    if (!weatherDict) return "#FFFFFF"; 
+  const getCardColor = (
+    date: string,
+    weatherDict: { [time: string]: number } | null,
+    startTime?: string,
+    endTime?: string
+  ) => {
+    if (date !== today) return "#FFFFFF";
+    if (!weatherDict || !startTime || !endTime) return "#FFFFFF";
 
     const times = Object.keys(weatherDict);
-    const validTimes = times.filter((time) => time >= startTime && time <= endTime);
-    const selectedTime = validTimes.length > 0 ? validTimes[0] : times.find((time) => time >= startTime) || startTime;
+    const validTimes = times.filter((t) => t >= startTime && t <= endTime);
+    const selectedTime = validTimes.length > 0 ? validTimes[0] : times.find((t) => t >= startTime) || startTime;
 
     const weatherCode = weatherDict[selectedTime]?.toString();
-    const mappingEntry = weather[0][weatherCode as keyof typeof weather[0]];
-    return mappingEntry?.style.color || "#FFFFFF";
+    const mappingEntry = (weather as any)[weatherCode];
+    if (typeof mappingEntry === "string") return "#FFFFFF";
+    return mappingEntry?.style?.color || "#FFFFFF";
   };
 
   useEffect(() => {
     const updateActivityColors = async () => {
       const colors: { [key: string]: string } = {};
 
-      for (const day of trip.itinerary.tripFlow) {
+      if (!trip.tripFlow) return; 
+
+      for (const day of trip.tripFlow) {
         for (const activity of day.activityContent) {
-          const weatherDict = await fetchWeather(activity.latitude, activity.longitude);
-          const color = getCardColor(weatherDict, activity.start_time, activity.end_time);
-          colors[activity.specific_location] = color;
+          if (day.date === today && activity.latitude && activity.longitude) {
+            const wDict = await fetchWeather(activity.latitude, activity.longitude);
+            const color = getCardColor(day.date, wDict, activity.start_time, activity.end_time);
+            colors[activity.specific_location || ""] = color;
+          } else {
+            colors[activity.specific_location || ""] = "#FFFFFF";
+          }
         }
       }
-
       setActivityColors(colors);
     };
-
     updateActivityColors();
   }, [trip]);
->>>>>>> Stashed changes
-
-  const { itinerary } = trip;
-  const { travelLocation, tripSerialNo, tripFlow } = itinerary;
 
   const toggleExpand = (index: number) => {
     setExpandedDays((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -97,13 +121,18 @@ const TripDetails: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{travelLocation || "Unknown Location"}</Text>
-      <Text style={styles.subtitle}>Trip Serial No: {tripSerialNo || "N/A"}</Text>
+      <Text style={styles.title}>{trip.TravelLocation || "Unknown Location"}</Text>
+      <Text style={styles.subtitle}>Trip Serial No: {trip.tripSerialNo || "N/A"}</Text>
+      <Text style={styles.subtitle}>
+        Dates: {trip["start-date"] || "??"} - {trip["end-date"] || "??"}
+      </Text>
       <View style={styles.divider} />
 
-      {tripFlow.length > 0 ? (
+      {!trip.tripFlow || trip.tripFlow.length === 0 ? (
+        <Text style={styles.warningText}>No trip itinerary found.</Text>
+      ) : (
         <FlatList
-          data={tripFlow}
+          data={trip.tripFlow}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item, index }) => (
             <View style={styles.dayContainer}>
@@ -111,7 +140,7 @@ const TripDetails: React.FC = () => {
                 <Card style={styles.dayCard}>
                   <Card.Content>
                     <Text style={styles.date}>{item.date}</Text>
-                    <Text style={styles.activityCount}>{item.activityContent.length || 0} activities</Text>
+                    <Text style={styles.activityCount}>{item.activityContent.length} activities</Text>
                   </Card.Content>
                 </Card>
               </TouchableOpacity>
@@ -119,35 +148,47 @@ const TripDetails: React.FC = () => {
               {expandedDays[index] && (
                 <FlatList
                   data={item.activityContent}
-                  keyExtractor={(activity, idx) => idx.toString()}
-                  renderItem={({ item: activity }) => (
-<<<<<<< Updated upstream
-                    <Card style={styles.activityCard}>
-=======
-                    <Card style={[styles.activityCard, { backgroundColor: activityColors[activity.specific_location] || "#FFFFFF" }]}>
->>>>>>> Stashed changes
-                      <Card.Content>
-                        <Text style={styles.activityTitle}>{activity.specific_location || "Unknown Place"}</Text>
-                        <Text style={styles.activityText}>{activity.address || "No address available"}</Text>
-                        <Text style={styles.activityText}>{activity.start_time} - {activity.end_time}</Text>
-                        <Text style={styles.activityText}>Type: {activity.activity_type || "N/A"}</Text>
-                        <Text style={styles.notes}>{activity.notes || "No details provided"}</Text>
+                  keyExtractor={(act, idx) => idx.toString()}
+                  renderItem={({ item: activity }) => {
+                    const bgColor =
+                      activityColors[activity.specific_location || ""] || "#FFFFFF";
 
-                        {activity.latitude && activity.longitude && (
-                          <TouchableOpacity style={styles.mapButton} onPress={() => openGoogleMaps(activity.latitude, activity.longitude)}>
-                            <Text style={styles.mapButtonText}>View on Map</Text>
-                          </TouchableOpacity>
-                        )}
-                      </Card.Content>
-                    </Card>
-                  )}
+                    return (
+                      <Card style={[styles.activityCard, { backgroundColor: bgColor }]}>
+                        <Card.Content>
+                          <Text style={styles.activityTitle}>
+                            {activity.specific_location || "Unknown Place"}
+                          </Text>
+                          <Text style={styles.activityText}>
+                            {activity.address || "No address available"}
+                          </Text>
+                          <Text style={styles.activityText}>
+                            {activity.start_time} - {activity.end_time}
+                          </Text>
+                          <Text style={styles.activityText}>
+                            Type: {activity.activity_type || "N/A"}
+                          </Text>
+                          <Text style={styles.notes}>{activity.notes || "No details provided"}</Text>
+
+                          {activity.latitude && activity.longitude && (
+                            <TouchableOpacity
+                              style={styles.mapButton}
+                              onPress={() =>
+                                openGoogleMaps(activity.latitude, activity.longitude)
+                              }
+                            >
+                              <Text style={styles.mapButtonText}>View on Map</Text>
+                            </TouchableOpacity>
+                          )}
+                        </Card.Content>
+                      </Card>
+                    );
+                  }}
                 />
               )}
             </View>
           )}
         />
-      ) : (
-        <Text style={styles.warningText}>No trip itinerary found.</Text>
       )}
     </View>
   );
@@ -156,7 +197,7 @@ const TripDetails: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#fff" },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 4 },
-  subtitle: { fontSize: 16, color: "#555", marginBottom: 12 },
+  subtitle: { fontSize: 16, color: "#555", marginBottom: 8 },
   divider: { height: 1, backgroundColor: "#ddd", marginVertical: 12 },
   date: { fontSize: 18, fontWeight: "bold", color: "#333" },
   activityCount: { fontSize: 14, color: "#666" },
@@ -181,8 +222,8 @@ const styles = StyleSheet.create({
   activityTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 4 },
   activityText: { fontSize: 14, color: "#555" },
   notes: { fontSize: 12, color: "#777", marginTop: 4 },
-  errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 20 },
   warningText: { fontSize: 14, color: "orange", textAlign: "center", marginTop: 10 },
+  dayText: { fontSize: 16, fontWeight: "bold", marginBottom: 4 },
   mapButton: {
     backgroundColor: "#007BFF",
     paddingVertical: 8,
@@ -192,6 +233,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   mapButtonText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 20 },
 });
 
 export default TripDetails;
