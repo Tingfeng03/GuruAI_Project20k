@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
 import { setTripData } from "../../redux/slices/tripSlice";
-// Import the addItinerary action
 import { addItinerary } from "../../redux/slices/itinerarySlice";
 
 export default function SearchPage() {
@@ -15,7 +14,6 @@ export default function SearchPage() {
 
   const [loading, setLoading] = useState(false);
 
-  /** Format ISO date as local date string */
   const formatDate = (isoString: string) => {
     if (!isoString) return "";
     return new Date(isoString).toLocaleDateString();
@@ -35,7 +33,6 @@ export default function SearchPage() {
     setLoading(true);
 
     try {
-      // POST to your Python backend
       const response = await fetch("http://localhost:8000/itinerary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,15 +42,11 @@ export default function SearchPage() {
         throw new Error(`Server error (POST): ${response.statusText}`);
       }
 
-      // The backend returns a single newly generated trip object
       const newTrip = await response.json();
       console.log("POST result (Python backend):", newTrip);
 
-      // 1) Immediately add the new trip to the Redux store
-      //    This ensures we see it in TripPlan without refreshing.
       dispatch(addItinerary(newTrip));
 
-      // 2) Optionally clear the user input fields
       dispatch(
         setTripData({
           itinerary: null, // or {}
@@ -69,7 +62,6 @@ export default function SearchPage() {
         })
       );
 
-      // 3) Navigate to TripPlan
       router.push("/(tabs)/tripPlan");
     } catch (error) {
       console.error("Error:", error);
@@ -95,7 +87,6 @@ export default function SearchPage() {
         </Text>
         <Card style={styles.card}>
           <Card.Content>
-            {/* Destination */}
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/destinationSearch")}
               activeOpacity={0.8}
@@ -109,7 +100,6 @@ export default function SearchPage() {
               />
             </TouchableOpacity>
 
-            {/* Dates */}
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/selectDate")}
               activeOpacity={0.8}
@@ -124,7 +114,6 @@ export default function SearchPage() {
               />
             </TouchableOpacity>
 
-            {/* Guests and Rooms */}
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/guestAndRoom")}
               activeOpacity={0.8}
@@ -139,7 +128,6 @@ export default function SearchPage() {
               />
             </TouchableOpacity>
 
-            {/* Budget */}
             <TextInput
               label="Budget"
               mode="outlined"
@@ -148,7 +136,6 @@ export default function SearchPage() {
               right={<TextInput.Icon icon="currency-usd" />}
             />
 
-            {/* Activities */}
             <TextInput
               label="Activities"
               mode="outlined"
@@ -157,7 +144,6 @@ export default function SearchPage() {
               right={<TextInput.Icon icon="run" />}
             />
 
-            {/* Food */}
             <TextInput
               label="Food"
               mode="outlined"
@@ -166,7 +152,6 @@ export default function SearchPage() {
               right={<TextInput.Icon icon="food" />}
             />
 
-            {/* Pace */}
             <TextInput
               label="Pace"
               mode="outlined"
@@ -175,7 +160,6 @@ export default function SearchPage() {
               right={<TextInput.Icon icon="walk" />}
             />
 
-            {/* Additional Notes */}
             <TextInput
               label="Additional Notes"
               mode="outlined"
@@ -184,7 +168,6 @@ export default function SearchPage() {
               right={<TextInput.Icon icon="note" />}
             />
 
-            {/* Search Button */}
             <Button mode="contained" style={styles.searchButton} onPress={handleSearch}>
               Search
             </Button>
@@ -195,7 +178,6 @@ export default function SearchPage() {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 16 },

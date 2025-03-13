@@ -12,7 +12,7 @@ import { CustomDrawerContent } from "@/components/CustomDrawerContent";
 import { drawerRoutes } from "@/config/drawerRoutes";
 
 import { Provider } from "react-redux";
-import store from "../redux/store"; 
+import store from "../redux/store";
 import { useAppDispatch } from "../redux/hooks";
 // import { setWeather } from "../redux/slices/weatherSlice";
 import { setItineraries } from "../redux/slices/itinerarySlice";
@@ -45,10 +45,10 @@ const LayoutContent = () => {
   useEffect(() => {
     const fetchItinerary = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/itineraries");
+        const response = await fetch("http://localhost:8080/api/tripplans");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        console.log("Fetched Itineraries:", data);
+        console.log("Fetched Itinerariessssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss:", data);
         dispatch(setItineraries(data));
       } catch (error) {
         console.error("Error fetching itinerary:", error);
