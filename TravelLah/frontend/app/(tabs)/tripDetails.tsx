@@ -1,18 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Linking, // 1) Import Linking from React Native
+  Linking,
+  Alert, // 1) Import Linking from React Native
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
 import { weather as weatherMapping } from "../../config/weather";      // existing mapping for color/desc
 import { weatherIcons } from "../../config/weatherIcons";             // new emoji icons
+import { useAppDispatch } from "../../redux/hooks";
+import { setItineraries } from "../../redux/slices/itinerarySlice";
 
 interface ActivityContent {
+  activityId?: string;
   specificLocation?: string;
   address?: string;
   latitude?: number | string;
@@ -43,6 +47,7 @@ interface Trip {
 const TripDetails: React.FC = () => {
   const params = useLocalSearchParams();
   const trip: Trip | null = params.trip ? JSON.parse(params.trip as string) : null;
+  const dispatch = useAppDispatch();
 
   const [expandedDays, setExpandedDays] = useState<{ [dayIndex: number]: boolean }>({});
   const [weatherData, setWeatherData] = useState<{
@@ -66,6 +71,25 @@ const TripDetails: React.FC = () => {
     const url = `https://www.google.com/maps/search/?api=1&query=${latStr},${lngStr}`;
     Linking.openURL(url);
   };
+
+  const fetchItinerary = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/itineraries");
+      if (!response.ok)
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      const data = await response.json();
+      console.log("Fetched Itineraries:", data);
+      dispatch(setItineraries(data));
+      // If you're not using redux, you can update local state instead:
+      // setItineraries(data);
+    } catch (error) {
+      console.error("Error fetching itinerary:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchItinerary();
+  }, []);
 
   // Fetch weather from Open-Meteo
   const fetchActivityWeather = async (
@@ -229,6 +253,36 @@ const TripDetails: React.FC = () => {
                           >
                             <Text style={styles.mapButtonText}>Open in Google Maps</Text>
                           </TouchableOpacity>
+                          <TouchableOpacity 
+                            style={styles.mapButton}
+                            onPress={async () => {
+                              try {
+                                const response = await fetch('http://localhost:8080/api/regenerate-activities', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    activityId: activity.activityId,
+                                    date: dayItem.date,
+                                  }),
+                                });
+
+                                if (!response.ok) {
+                                  throw new Error('Failed to regenerate activities');
+                                }
+
+                                await response.json();
+                                // Update the state with new activities
+                                fetchItinerary();
+                              } catch (error) {
+                                console.error('Error regenerating activities:', error);
+                                Alert.alert('Error', 'Failed to regenerate activities');
+                              } 
+                            }}
+                          >
+                            <Text style={styles.mapButtonText}>Regenerate Activities</Text>                           
+                        </TouchableOpacity>
                         </Card.Content>
                       </Card>
                     );
