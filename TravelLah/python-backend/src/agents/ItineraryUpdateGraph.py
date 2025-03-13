@@ -60,6 +60,7 @@ class ItineraryUpdateWorkflow:
         Returns:
             The generated itinerary as a dictionary
         """
+
         logger.info(f"Starting itinerary workflow with options: {options}")
         
         thread = {"configurable": {"thread_id": "4"}}

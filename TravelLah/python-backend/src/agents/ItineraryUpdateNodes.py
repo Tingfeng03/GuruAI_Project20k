@@ -1,7 +1,7 @@
+from src.services.updateItinerary import UpdateItineraryService
 from src.agents.state import AgentState
 from src.services.llm import llm_service, Queries
 from src.services.tavilySearch import search_service
-from src.services.itinerary import planner_service
 from src.prompts.ItineraryUpdateTemplates import ItineraryUpdatePrompts
 from src.settings.logging import app_logger as logger
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -28,6 +28,8 @@ def research_plan_node(state: AgentState):
         SystemMessage(content=ItineraryUpdatePrompts.PLANNER_ASSISTANT_PROMPT),
         HumanMessage(content=state['plan'])
     ])   
+    logger.info("Executing research_plan_node")
+
     print("**********************************************************")
     print("Queries and Response: ")
     for q in queries.queries:
@@ -47,11 +49,14 @@ def research_plan_node(state: AgentState):
     return {**state, "queries": pastQueries, "answers": answers}
 
 def generation_node(state: AgentState):
+    logger.info("Entering generation_node")
+
     activity_params = state.get("activity_params", {})
-    dynamic_query = planner_service.travel_agent_planner.build_dynamic_activity_query(activity_params)
+    dynamic_query = UpdateItineraryService.build_dynamic_activity_query(activity_params)
     
-    refined_activity = planner_service.travel_agent_planner.generate_refined_activity(dynamic_query)
-    
+    refined_activity = UpdateItineraryService.generate_refined_activity(dynamic_query, activity_params)
+    logger.info("Executing generation_node")
+
     print("**********************************************************")
     print("Dynamic activity Query: ")
     print(dynamic_query)
@@ -67,6 +72,8 @@ def reflection_node(state: AgentState):
         SystemMessage(content=ItineraryUpdatePrompts.PLANNER_CRITIQUE_PROMPT), 
         HumanMessage(content=state['draft'])
     ]
+    logger.info("Executing reflection_node")
+
     response = llm_service.model.invoke(messages)
     print("**********************************************************")
     print("Critique: ")
@@ -87,6 +94,7 @@ def research_critique_node(state: AgentState):
     ])
     print("**********************************************************")
     print("Queries and Response:")
+    logger.info("Executing research_critique_node")
     for q in queries.queries:
         print("Query: " + q)
         pastQueries.append(q)
