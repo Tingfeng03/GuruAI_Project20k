@@ -250,7 +250,7 @@ const TripDetails: React.FC = () => {
                             style={styles.recalibrateButton}
                             onPress={() => handleRecalibrate(trip.id, dayItem.date || "", activity, dayIndex, aIndex)}
                           >
-                            <Text style={styles.recalibrateButtonText}>Recalibrate Activity</Text>
+                            <Text style={styles.recalibrateButtonText}>Regenerate Activity</Text>
                           </TouchableOpacity>
                         </Card.Content>
                       </Card>
