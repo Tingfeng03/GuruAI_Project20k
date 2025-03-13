@@ -18,12 +18,12 @@ def transform_frontend_to_backend_format(payload):
     num_rooms = guests_and_rooms.get("rooms", 1)
     
     # Map budget value to budget category (you may need to adjust these thresholds)
-    budget_value = int(payload.get("budget", 0))
-    budget_category = "budget"
-    if budget_value > 5000:
-        budget_category = "luxury"
-    elif budget_value > 2000:
-        budget_category = "moderate"
+    budget_value = str(payload.get("budget", "moderate"))
+    # budget_category = "budget"
+    # if budget_value > 5000:
+    #     budget_category = "luxury"
+    # elif budget_value > 2000:
+    #     budget_category = "moderate"
     
     # Construct the transformed payload
     itinerary_params = {
@@ -34,7 +34,7 @@ def transform_frontend_to_backend_format(payload):
         "dates": formatted_dates,
         "party_size": party_size,
         "num_rooms": num_rooms,
-        "budget": budget_category,
+        "budget": payload.get("budget", ""),
         "activities": payload.get("activities", ""),
         "food": payload.get("food", "").lower(),
         "pace": payload.get("pace", "").lower(),

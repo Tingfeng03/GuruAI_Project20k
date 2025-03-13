@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 def plan_node(state: AgentState):
     messages = [
-        SystemMessage(content=UpdatePrompts.VACATION_PLANNING_SUPERVISOR), 
+        SystemMessage(content=ItineraryUpdatePrompts.VACATION_PLANNING_SUPERVISOR), 
         HumanMessage(content=state['task'])
     ]
     response = llm_service.model.invoke(messages)
@@ -25,7 +25,7 @@ def research_plan_node(state: AgentState):
     pastQueries = state.get('queries', [])
     answers = state.get('answers', [])
     queries = llm_service.model.with_structured_output(Queries).invoke([
-        SystemMessage(content=UpdatePrompts.PLANNER_ASSISTANT_PROMPT),
+        SystemMessage(content=ItineraryUpdatePrompts.PLANNER_ASSISTANT_PROMPT),
         HumanMessage(content=state['plan'])
     ])   
     print("**********************************************************")
@@ -64,7 +64,7 @@ def generation_node(state: AgentState):
 
 def reflection_node(state: AgentState):
     messages = [
-        SystemMessage(content=UpdatePrompts.PLANNER_CRITIQUE_PROMPT), 
+        SystemMessage(content=ItineraryUpdatePrompts.PLANNER_CRITIQUE_PROMPT), 
         HumanMessage(content=state['draft'])
     ]
     response = llm_service.model.invoke(messages)
@@ -79,7 +79,7 @@ def research_critique_node(state: AgentState):
     pastQueries = state['queries'] or []
     answers = state['answers'] or []
     queries = llm_service.model.with_structured_output(Queries).invoke([
-        SystemMessage(content=UpdatePrompts.PLANNER_CRITIQUE_ASSISTANT_PROMPT.format(
+        SystemMessage(content=ItineraryUpdatePrompts.PLANNER_CRITIQUE_ASSISTANT_PROMPT.format(
             queries=pastQueries, answers=answers
             )
         ),
