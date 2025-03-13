@@ -1,4 +1,4 @@
-export const weather = [
+export const weather = 
     {
         "0": {
             "description": "Clear sky",
@@ -177,4 +177,3 @@ export const weather = [
             }
         }
     }
-]

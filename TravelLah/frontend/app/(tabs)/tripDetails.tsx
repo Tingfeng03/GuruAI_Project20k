@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
@@ -6,6 +6,7 @@ import { Card } from "react-native-paper";
 import { weather } from "../../config/weather";
 import dayjs from "dayjs";
 
+// code compile ok, seems to render correct result also, havent tested with dummy data
 const openGoogleMaps = (lat?: number, long?: number) => {
   if (!lat || !long) return;
   const url = `https://www.google.com/maps/search/?api=1&query=${lat},${long}`;
@@ -17,6 +18,8 @@ const TripDetails: React.FC = () => {
   const trip = params.trip ? JSON.parse(params.trip as string) : null;
   const [expandedDays, setExpandedDays] = useState<{ [key: number]: boolean }>({});
 
+  const [cardColors, setCardColors] = useState<{ [key: string]: string }>({});  
+
   if (!trip || !trip.itinerary) {
     return (
       <View style={styles.container}>
@@ -24,6 +27,8 @@ const TripDetails: React.FC = () => {
       </View>
     );
   }
+
+  
 
   const fetchWeather = async (latitude: string, longtitude: string) => {
     try {
@@ -50,9 +55,6 @@ const TripDetails: React.FC = () => {
     }
   };
 
-  // have a forEach loop for activities
-  // scan if activities time falls in the fetchWeather... highlight the card with the color
-  // weather.json
   const getCardColor = async (
     date: any,
     lat: any,
@@ -64,28 +66,25 @@ const TripDetails: React.FC = () => {
     if (date !== today) {
       return "#FFFFFF"; // Return default color if the date is not today
     }
-    try {
-      const weatherDict = await fetchWeather(lat, long);
-      if (!weatherDict) return "#FFFFFF"; // Return default color if weatherDict is null
+    
+    // I realise we still need to call this for every card beacuse each trip flow is different lat and long
+    const weatherDict = await fetchWeather(lat, long);
+    if (!weatherDict) return "#FFFFFF"; // Return default color if weatherDict is null
 
-      const times = Object.keys(weatherDict);
-      const validTimes = times.filter((time) => time >= start_time && time <= end_time);
+    const times = Object.keys(weatherDict);
+    const validTimes = times.filter((time) => time >= start_time && time <= end_time);
 
-      // use the first valid time
-      let selectedTime: string;
-      if (validTimes.length > 0) {
-        selectedTime = validTimes[0];
-      } else {
-        selectedTime = times.find((time) => time >= start_time) || start_time;
-      }
-
-      const weatherCode = weatherDict[selectedTime].toString();
-      const mappingEntry = weather[0][weatherCode as keyof typeof weather[0]]
-      return mappingEntry.style.color;
-    } catch (error) {
-      console.error("Error in getCardColor:", error);
-      return "#FFFFFF"; // Return default color in case of error
+    // use the first valid time
+    let selectedTime: string;
+    if (validTimes.length > 0) {
+      selectedTime = validTimes[0];
+    } else {
+      selectedTime = times.find((time) => time >= start_time) || start_time;
     }
+
+    const weatherCode = weatherDict[selectedTime].toString();
+    const mappingEntry = weather[weatherCode as keyof typeof weather];
+    return mappingEntry.style.color;
   };
 
   const { itinerary } = trip;
@@ -97,6 +96,38 @@ const TripDetails: React.FC = () => {
       [index]: !prev[index],
     }));
   };
+
+  // useEffect to compute and update cardColors once the tripFlow data is available
+  useEffect(() => {
+    if (tripFlow && tripFlow.length > 0) {
+      const promises: Promise<{ key: string; color: string }>[] = [];
+
+      tripFlow.forEach((day: any, dayIndex: number) => {
+        if (day.activityContent && day.activityContent.length > 0) {
+          day.activityContent.forEach((activity: any, actIndex: number) => {
+            const key = `${dayIndex}-${actIndex}`;
+            const promise = getCardColor(
+              activity.date,
+              activity.latitude,
+              activity.longitude,
+              activity.start_time,
+              activity.end_time
+            ).then((color) => ({ key, color }));
+            promises.push(promise);
+          });
+        }
+      });
+      
+      // not really sure about this
+      Promise.all(promises).then((results) => {
+        const newCardColors: { [key: string]: string } = {};
+        results.forEach(({ key, color }) => {
+          newCardColors[key] = color;
+        });
+        setCardColors(newCardColors);
+      });
+    }
+  }, [tripFlow]);
 
   return (
     <View style={styles.container}>
@@ -124,9 +155,13 @@ const TripDetails: React.FC = () => {
               {expandedDays[index] && item.activityContent && (
                 <FlatList
                   data={item.activityContent}
+                  // not really sure about this also
                   keyExtractor={(activity, idx) => idx.toString()}
-                  renderItem={({ item: activity }) => (
-                    <Card style={[styles.activityCard, {backgroundColor: await getCardColor(activity.date, activity.latitude, activity.longitude, activity.start_time, activity.end_time)}]}>
+                  renderItem={({ item: activity, index: actIndex }) => {
+                    const cardKey = `${index}-${actIndex}`;
+                    const bgColor = cardColors[cardKey] || "#fff"; 
+                    return (
+                    <Card style={[styles.activityCard, {backgroundColor: bgColor}]}>
                       <Card.Content>
                         <Text style={styles.activityTitle}>
                           {activity.specific_location || "Unknown Place"}
@@ -156,18 +191,18 @@ const TripDetails: React.FC = () => {
 
                         <TouchableOpacity
                           // style={styles.mapButton}
-                          onPress={() =>
-                            // Implement your logic here
-                            // Open a modal, for 'user preference'
-                            // after finished await() 
-                            // update the State of this page, do a page refresh to update frontend (might not need a refresh)
-                          }
+                          // onPress={() =>
+                          //   // Implement your logic here
+                          //   // Open a modal, for 'user preference'
+                          //   // after finished await() 
+                          //   // update the State of this page, do a page refresh to update frontend (might not need a refresh)
+                          // }
                         >
                           <Text style={styles.mapButtonText}>Regenerate Activities</Text>
                         </TouchableOpacity>
                       </Card.Content>
                     </Card>
-                  )}
+                  )}}
                 />
               )}
             </View>
