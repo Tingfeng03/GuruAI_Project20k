@@ -1,7 +1,7 @@
 class ItineraryUpdatePrompts:
     """Collection of prompts used in the update itinerary plan"""
 
-    ACTIVITY_PLANNING_SUPERVISOR_PROMPT="""You are the activity planning supervisor. You have to give a detailed outline of what the planning agent \
+    VACATION_PLANNING_SUPERVISOR="""You are the activity planning supervisor. You have to give a detailed outline of what the planning agent \
     has to consider when planning the activity according to the user input."""
 
     PLANNER_ASSISTANT_PROMPT = """You are an assistant charged with providing information that can be used by the planner to plan the activity.
@@ -48,7 +48,7 @@ class ItineraryUpdatePrompts:
 
     RAW_TASK_TEMPLATE = (
         "Suggest an alternative activity that is similar in nature to {activity} on {date}, near {address}. The activity should not exceed the timeframe of"
-        "{start_time} to {end_time}",
+        "{start_time} to {end_time}"
     )
 
   

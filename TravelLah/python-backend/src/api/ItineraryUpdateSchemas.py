@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
 
-class StreamOptions(BaseModel):
+class StreamOptionsUpdate(BaseModel):
     """Input schema for itinerary generation request"""
     task: str
     max_revisions: int

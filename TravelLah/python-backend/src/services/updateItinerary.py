@@ -2,7 +2,7 @@ from typing import Dict, Any
 from .llm import llm_service
 from .tavilySearch import search_service
 from ..settings.logging import app_logger as logger
-from ..prompts.ItineraryUpdateTemplates import UpdatePrompts
+from ..prompts.ItineraryUpdateTemplates import ItineraryUpdatePrompts as UpdatePrompts
 from langchain_community.adapters.openai import convert_openai_messages
 import requests
 
@@ -76,9 +76,12 @@ class UpdateItineraryService:
             f"{UpdatePrompts.format_condition}"
         )
         
+        logger.info("Generated system message: %s", sysmsg)
         retrieval_context = ""
         tavily_response = self.tavily.search(query=query_text, max_results=2)
         destination_info = []
+        logger.info("Tavily response: %s", tavily_response)
+        
         if tavily_response and "results" in tavily_response:
             for r in tavily_response["results"]:
                 lat = r.get("latitude", "")
@@ -97,6 +100,7 @@ class UpdateItineraryService:
         lc_messages = convert_openai_messages(messages)
         response = self.llm.invoke(lc_messages)
         logger.info("Raw LLM response (refined_activity): %s", response.content)
+
 
         return response.content
 
