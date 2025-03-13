@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
+<<<<<<< Updated upstream
+=======
+import dayjs from "dayjs";
+import { weather } from "../../config/weather";
+>>>>>>> Stashed changes
 
 const openGoogleMaps = (lat?: number, long?: number) => {
   if (!lat || !long) return;
@@ -13,6 +18,7 @@ const TripDetails: React.FC = () => {
   const params = useLocalSearchParams();
   const trip = params.trip ? JSON.parse(params.trip as string) : null;
   const [expandedDays, setExpandedDays] = useState<{ [key: number]: boolean }>({});
+  const [activityColors, setActivityColors] = useState<{ [key: string]: string }>({});
 
   if (!trip || !trip.itinerary) {
     return (
@@ -22,34 +28,71 @@ const TripDetails: React.FC = () => {
     );
   }
 
-  const fetchWeather = async (latitude: string, longtitude: string) => {
+  const fetchWeather = async (latitude: number, longitude: number) => {
     try {
-      // const latitude = process.env.EXPO_PUBLIC_LATITUDE || "52.52";
-      // const longitude = process.env.EXPO_PUBLIC_LONGITUDE || "13.41";
-      const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longtitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
-
+      const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=weather_code&current_weather=true&forecast_days=1`;
       const response = await fetch(weatherURL);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
+<<<<<<< Updated upstream
       console.log("Fetched Weather:", data);
       // dispatch(setWeather(data));
+=======
+
+      const weatherDict: { [key: string]: number } = {};
+      data.hourly.time.forEach((time: string, index: number) => {
+        const formattedTime = dayjs(time).format("HH:mm");
+        weatherDict[formattedTime] = data.hourly.weather_code[index];
+      });
+
+      return weatherDict;
+>>>>>>> Stashed changes
     } catch (error) {
       console.error("Error fetching weather:", error);
     }
   };
 
+<<<<<<< Updated upstream
   // have a forEach loop for activities
   // scan if activities time falls in the fetchWeather... highlight the card with the color
   // weather.json
+=======
+  const getCardColor = (weatherDict: { [key: string]: number } | null, startTime: string, endTime: string) => {
+    if (!weatherDict) return "#FFFFFF"; 
+
+    const times = Object.keys(weatherDict);
+    const validTimes = times.filter((time) => time >= startTime && time <= endTime);
+    const selectedTime = validTimes.length > 0 ? validTimes[0] : times.find((time) => time >= startTime) || startTime;
+
+    const weatherCode = weatherDict[selectedTime]?.toString();
+    const mappingEntry = weather[0][weatherCode as keyof typeof weather[0]];
+    return mappingEntry?.style.color || "#FFFFFF";
+  };
+
+  useEffect(() => {
+    const updateActivityColors = async () => {
+      const colors: { [key: string]: string } = {};
+
+      for (const day of trip.itinerary.tripFlow) {
+        for (const activity of day.activityContent) {
+          const weatherDict = await fetchWeather(activity.latitude, activity.longitude);
+          const color = getCardColor(weatherDict, activity.start_time, activity.end_time);
+          colors[activity.specific_location] = color;
+        }
+      }
+
+      setActivityColors(colors);
+    };
+
+    updateActivityColors();
+  }, [trip]);
+>>>>>>> Stashed changes
 
   const { itinerary } = trip;
   const { travelLocation, tripSerialNo, tripFlow } = itinerary;
 
   const toggleExpand = (index: number) => {
-    setExpandedDays((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
+    setExpandedDays((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   return (
@@ -58,7 +101,7 @@ const TripDetails: React.FC = () => {
       <Text style={styles.subtitle}>Trip Serial No: {tripSerialNo || "N/A"}</Text>
       <View style={styles.divider} />
 
-      {tripFlow && tripFlow.length > 0 ? (
+      {tripFlow.length > 0 ? (
         <FlatList
           data={tripFlow}
           keyExtractor={(item, index) => index.toString()}
@@ -68,57 +111,33 @@ const TripDetails: React.FC = () => {
                 <Card style={styles.dayCard}>
                   <Card.Content>
                     <Text style={styles.date}>{item.date}</Text>
-                    <Text style={styles.activityCount}>
-                      {item.activityContent?.length || 0} activities
-                    </Text>
+                    <Text style={styles.activityCount}>{item.activityContent.length || 0} activities</Text>
                   </Card.Content>
                 </Card>
               </TouchableOpacity>
 
-              {expandedDays[index] && item.activityContent && (
+              {expandedDays[index] && (
                 <FlatList
                   data={item.activityContent}
                   keyExtractor={(activity, idx) => idx.toString()}
                   renderItem={({ item: activity }) => (
+<<<<<<< Updated upstream
                     <Card style={styles.activityCard}>
+=======
+                    <Card style={[styles.activityCard, { backgroundColor: activityColors[activity.specific_location] || "#FFFFFF" }]}>
+>>>>>>> Stashed changes
                       <Card.Content>
-                        <Text style={styles.activityTitle}>
-                          {activity.specific_location || "Unknown Place"}
-                        </Text>
-                        <Text style={styles.activityText}>
-                          {activity.address || "No address available"}
-                        </Text>
-                        <Text style={styles.activityText}>
-                          {activity.start_time} - {activity.end_time}
-                        </Text>
-                        <Text style={styles.activityText}>
-                          Type: {activity.activity_type || "N/A"}
-                        </Text>
+                        <Text style={styles.activityTitle}>{activity.specific_location || "Unknown Place"}</Text>
+                        <Text style={styles.activityText}>{activity.address || "No address available"}</Text>
+                        <Text style={styles.activityText}>{activity.start_time} - {activity.end_time}</Text>
+                        <Text style={styles.activityText}>Type: {activity.activity_type || "N/A"}</Text>
                         <Text style={styles.notes}>{activity.notes || "No details provided"}</Text>
 
-                        {/* Open Google Maps Button inside Activity Card */}
                         {activity.latitude && activity.longitude && (
-                          <TouchableOpacity
-                            style={styles.mapButton}
-                            onPress={() =>
-                              openGoogleMaps(activity.latitude, activity.longitude)
-                            }
-                          >
+                          <TouchableOpacity style={styles.mapButton} onPress={() => openGoogleMaps(activity.latitude, activity.longitude)}>
                             <Text style={styles.mapButtonText}>View on Map</Text>
                           </TouchableOpacity>
                         )}
-
-                        <TouchableOpacity
-                          // style={styles.mapButton}
-                          onPress={() =>
-                            // Implement your logic here
-                            // Open a modal, for 'user preference'
-                            // after finished await() 
-                            // update the State of this page, do a page refresh to update frontend (might not need a refresh)
-                          }
-                        >
-                          <Text style={styles.mapButtonText}>Regenerate Activities</Text>
-                        </TouchableOpacity>
                       </Card.Content>
                     </Card>
                   )}
