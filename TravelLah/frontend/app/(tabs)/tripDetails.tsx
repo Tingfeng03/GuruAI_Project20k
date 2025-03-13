@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Linking } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Linking, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
 
@@ -190,13 +190,36 @@ const TripDetails: React.FC = () => {
                         )}
 
                         <TouchableOpacity
-                          // style={styles.mapButton}
-                          // onPress={() =>
-                          //   // Implement your logic here
-                          //   // Open a modal, for 'user preference'
-                          //   // after finished await() 
-                          //   // update the State of this page, do a page refresh to update frontend (might not need a refresh)
-                          // }
+                          style={styles.mapButton}
+                          onPress={async() =>{
+                            try {
+                              const response = await fetch('http://python-backend-api-call', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  activityId: activity.id,
+                                  date: tripFlow.date
+                                }),
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Failed to regenerate activities');
+                              }
+
+                              const newActivities = await response.json();
+                              const updatedTripFlow = [...tripFlow];
+                              const dayIndex = updatedTripFlow.findIndex(day => day.date === item.date);
+                              if (dayIndex !== -1) {
+                                updatedTripFlow[dayIndex].activityContent = newActivities;
+                                // 
+                              }
+                            } catch (error) {
+                              console.error('Error regenerating activities:', error);
+                              Alert.alert('Error', 'Failed to regenerate activities');
+                            }
+                          }}
                         >
                           <Text style={styles.mapButtonText}>Regenerate Activities</Text>
                         </TouchableOpacity>
