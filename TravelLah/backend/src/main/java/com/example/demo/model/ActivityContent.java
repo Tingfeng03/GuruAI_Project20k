@@ -16,7 +16,7 @@ public class ActivityContent {
     @Field("end_time")
     private String endTime;
 
-    @Field("activity_type")
+    @Field("activityType")
     private String activityType;
     private String notes;
 

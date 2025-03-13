@@ -3,7 +3,7 @@ export const weather =
         "0": {
             "description": "Clear sky",
             "style": {
-                "color": "red"
+                "color": "#"
             }
         },
         "1": {

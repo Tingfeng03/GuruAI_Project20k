@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
+import { weather as weatherMapping } from "../../config/weather";      // existing mapping for color/desc
+import { weatherIcons } from "../../config/weatherIcons";             // new emoji icons
 
 interface ActivityContent {
   specificLocation?: string;
@@ -34,8 +36,14 @@ interface Trip {
 const TripDetails: React.FC = () => {
   const params = useLocalSearchParams();
   const trip: Trip | null = params.trip ? JSON.parse(params.trip as string) : null;
-  const [expandedDays, setExpandedDays] = useState<{ [key: number]: boolean }>({});
-  console.log("trip: ", trip);
+
+  // Which days are expanded
+  const [expandedDays, setExpandedDays] = useState<{ [dayIndex: number]: boolean }>({});
+
+  // Weather data: { dayIndex: { activityIndex: <data> } }
+  const [weatherData, setWeatherData] = useState<{
+    [dayIndex: number]: { [activityIndex: number]: any };
+  }>({});
 
   if (!trip) {
     return (
@@ -45,68 +53,164 @@ const TripDetails: React.FC = () => {
     );
   }
 
-  // Toggle expand/collapse for each day
-  const toggleExpand = (index: number) => {
-    setExpandedDays((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
+  // Fetch weather from Open-Meteo
+  const fetchActivityWeather = async (
+    latitude: string | number,
+    longitude: string | number,
+    date: string,
+    startTime?: string
+  ) => {
+    try {
+      const latStr = String(latitude);
+      const lonStr = String(longitude);
+      const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${latStr}&longitude=${lonStr}&start_date=${date}&end_date=${date}&hourly=weather_code,temperature_2m,windspeed_10m&timezone=auto`;
+
+      const response = await fetch(weatherURL);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+
+      // Determine which hour's weather to use
+      let chosenIndex = 0;
+      if (startTime) {
+        // e.g. "2025-01-01T10:00"
+        const target = `${date}T${startTime}`;
+        const idx = data.hourly.time.indexOf(target);
+        if (idx >= 0) chosenIndex = idx;
+      }
+
+      const weathercode = data.hourly.weather_code?.[chosenIndex];
+      const temperature = data.hourly.temperature_2m?.[chosenIndex];
+      const windspeed = data.hourly.windspeed_10m?.[chosenIndex];
+
+      return {
+        weathercode,
+        temperature,
+        windspeed,
+      };
+    } catch (error) {
+      console.error("Error fetching weather:", error);
+      return null;
+    }
   };
 
-  console.log()
+  // Expand/collapse day
+  const toggleExpand = async (dayIndex: number, dayItem: TripFlow) => {
+    setExpandedDays((prev) => ({
+      ...prev,
+      [dayIndex]: !prev[dayIndex],
+    }));
+
+    // If newly expanded, fetch weather
+    if (!expandedDays[dayIndex] && dayItem.activityContent) {
+      try {
+        const dayWeathers: { [activityIndex: number]: any } = {};
+
+        const promises = dayItem.activityContent.map(async (activity, aIndex) => {
+          const { latitude, longitude, startTime } = activity;
+          if (!latitude || !longitude || !dayItem.date) {
+            return null;
+          }
+          // fetch for this activity
+          const w = await fetchActivityWeather(latitude, longitude, dayItem.date, startTime);
+          dayWeathers[aIndex] = w;
+          return w;
+        });
+
+        await Promise.all(promises);
+        setWeatherData((prev) => ({
+          ...prev,
+          [dayIndex]: dayWeathers,
+        }));
+      } catch (err) {
+        console.error("Error fetching weather for day:", err);
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{trip.travelLocation || "Unknown Location"}</Text>
       <Text style={styles.subtitle}>Trip Serial No: {trip.tripSerialNo || "N/A"}</Text>
       <Text style={styles.subtitle}>
-        Dates: {trip["startDate"] || "??"} - {trip["endDate"] || "??"}
+        Dates: {trip.startDate || "??"} - {trip.endDate || "??"}
       </Text>
 
-      {/* If there's no tripFlow or empty array, show a warning */}
       {(!trip.tripFlow || trip.tripFlow.length === 0) ? (
         <Text style={styles.warningText}>No trip itinerary found.</Text>
       ) : (
         <FlatList
           data={trip.tripFlow}
           keyExtractor={(_, i) => i.toString()}
-          renderItem={({ item, index }) => (
+          renderItem={({ item: dayItem, index: dayIndex }) => (
             <View style={styles.dayContainer}>
-              <TouchableOpacity onPress={() => toggleExpand(index)}>
+              <TouchableOpacity onPress={() => toggleExpand(dayIndex, dayItem)}>
                 <Card style={styles.dayCard}>
                   <Card.Content>
-                    <Text style={styles.date}>{item.date || "Unknown Date"}</Text>
+                    <Text style={styles.date}>{dayItem.date || "Unknown Date"}</Text>
                     <Text style={styles.activityCount}>
-                      {item.activityContent?.length ?? 0} activities
+                      {dayItem.activityContent?.length ?? 0} activities
                     </Text>
                   </Card.Content>
                 </Card>
               </TouchableOpacity>
 
-              {expandedDays[index] && (
-
+              {expandedDays[dayIndex] && (
                 <FlatList
-                  data={item.activityContent}
+                  data={dayItem.activityContent}
                   keyExtractor={(_, i2) => i2.toString()}
-                  renderItem={({ item: activity }) => (
-                    <Card style={styles.activityCard}>
-                      <Card.Content>
-                        <Text style={styles.activityTitle}>
-                          {activity.specificLocation || "Unknown Place"}
-                        </Text>
-                        <Text style={styles.activityText}>
-                          {activity.address || "No address available"}
-                        </Text>
-                        <Text style={styles.activityText}>
-                          {activity.startTime || "??"} - {activity.endTime || "??"}
-                        </Text>
-                        <Text style={styles.activityText}>
-                          Type: {activity.activityType || "N/A"}
-                        </Text>
-                        <Text style={styles.notes}>{activity.notes || "No details provided"}</Text>
-                      </Card.Content>
-                    </Card>
-                  )}
+                  renderItem={({ item: activity, index: aIndex }) => {
+                    const wData = weatherData[dayIndex]?.[aIndex];
+                    const code = wData?.weathercode;
+                    // Convert code to string
+                    const codeStr = code !== undefined ? String(code) : "";
+                    // The text-based details from weatherMapping
+                    const mapping =
+                      codeStr in weatherMapping
+                        ? weatherMapping[codeStr as keyof typeof weatherMapping]
+                        : null;
+
+                    const weatherDesc = mapping?.description || "Unknown";
+                    const weatherColor = mapping?.style?.color || "#000";
+
+                    // The emoji icon from weatherIcons
+                    const icon = weatherIcons[codeStr] || "❓";
+
+                    return (
+                      <Card style={styles.activityCard}>
+                        <Card.Content>
+                          <Text style={styles.activityTitle}>
+                            {activity.specificLocation || "Unknown Place"}
+                          </Text>
+                          <Text style={styles.activityText}>
+                            {activity.address || "No address available"}
+                          </Text>
+                          <Text style={styles.activityText}>
+                            {activity.startTime || "??"} - {activity.endTime || "??"}
+                          </Text>
+                          <Text style={styles.activityText}>
+                            Type: {activity.activityType || "N/A"}
+                          </Text>
+                          <Text style={styles.notes}>
+                            {activity.notes || "No details provided"}
+                          </Text>
+
+                          {/* Show weather details if any */}
+                          {wData && (
+                            <View style={{ marginTop: 8 }}>
+                              {/* Weather icon + description */}
+                              <Text style={[styles.weatherRow, { color: weatherColor }]}>
+                                {icon}  {weatherDesc}
+                              </Text>
+                              <Text>Temperature: {wData.temperature}°C</Text>
+                              <Text>Windspeed: {wData.windspeed} m/s</Text>
+                            </View>
+                          )}
+                        </Card.Content>
+                      </Card>
+                    );
+                  }}
                 />
               )}
             </View>
@@ -117,7 +221,6 @@ const TripDetails: React.FC = () => {
   );
 };
 
-// Example styles
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#fff" },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 4, color: "#333" },
@@ -147,6 +250,10 @@ const styles = StyleSheet.create({
   activityTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 4, color: "#333" },
   activityText: { fontSize: 14, color: "#555", marginBottom: 2 },
   notes: { fontSize: 12, color: "#777", marginTop: 4 },
+  weatherRow: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
 
 export default TripDetails;

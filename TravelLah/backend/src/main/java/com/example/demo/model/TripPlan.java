@@ -12,21 +12,21 @@ public class TripPlan {
     @Id
     private String id;
     
-    @Field("tripSerialNo")
+    // @Field("tripSerialNo")
     private String tripSerialNo;
 
-    @Field("TravelLocation")
+    // @Field("TravelLocation")
     private String travelLocation;
     private String latitude;
     private String longitude;
 
-    @Field("start-date")
+    // @Field("start-date")
     private String startDate;
 
-    @Field("end-date")
+    // @Field("end-date")
     private String endDate;
 
-    @Field("tripFlow")
+    // @Field("tripFlow")
     private List<TripFlow> tripFlow;
 
     public TripPlan() {

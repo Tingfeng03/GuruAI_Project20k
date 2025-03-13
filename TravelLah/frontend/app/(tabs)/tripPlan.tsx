@@ -7,7 +7,7 @@ interface Trip {
   id: string;
   userId?: string;
   tripSerialNo?: string;
-  TravelLocation?: string;
+  travelLocation?: string;
   latitude?: number;
   longitude?: number;
   "startDate"?: string;
@@ -51,7 +51,6 @@ const TripPlan: React.FC = () => {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
             const mapURL = getMapImageURL(item.latitude, item.longitude);
-            console.log("ITEMM: ", item);
             return (
               <TouchableOpacity
                 onPress={() =>
@@ -71,7 +70,7 @@ const TripPlan: React.FC = () => {
                   )}
                   <Card.Content>
                     <Text style={styles.address}>
-                      📍 {item.TravelLocation || "Unknown Location"}
+                      📍 {item.travelLocation || "Unknown Location"}
                     </Text>
                     <Text>
                       {/* If you store start/end date in top-level fields */}
