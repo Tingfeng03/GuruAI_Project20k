@@ -26,8 +26,14 @@ class ItineraryUpdatePrompts:
         "You are an expert activity planner known for creating extremely well thought out, detailed, and personalized activities that follow a "
         "logically sequenced, realistically timed and time-conscious schedule."
     )
+    bad_weather_context = (
+        "Due to bad weather, the customer is unable to partake in their given activity. "
+    )
+    good_weather_context = (
+        "The weather is good. The customer wishes to engage in another activity similar in nature to their original choice. "
+    )
     task = (
-        "Due to bad weather, the customer is unable to partake in their given activity. Provide an alternative activity that aligns to their preferences" \
+        "Provide an alternative activity that aligns to their preferences" \
         "of the kind of activity they were intending to do, time frame and other general preferences." #maybe include budget and travel party size
     )
     condition = (
