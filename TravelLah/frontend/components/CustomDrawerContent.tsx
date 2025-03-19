@@ -16,8 +16,8 @@ export function CustomDrawerContent({ navigation }: DrawerContentComponentProps)
                     label="NM"
                     size={80}
                 />
-                <Title style={[styles.title, { color: colors.text }]}>Ni Ma</Title>
-                <Caption style={[styles.caption, { color: colors.text }]}>@nmsl</Caption>
+                <Title style={[styles.title, { color: colors.text }]}>User</Title>
+                <Caption style={[styles.caption, { color: colors.text }]}>@user1</Caption>
             </View>
             {/* Register the screens you want in the drawer in /frontend/config/drawerRoutes.ts */}
             <View style={[styles.menu, styles.title]}>

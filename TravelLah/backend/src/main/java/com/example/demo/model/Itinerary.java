@@ -2,13 +2,25 @@ package com.example.demo.model;
 
 import java.util.List;
 
+import org.springframework.data.annotation.Id;
+
 public class Itinerary {
+    @Id
+    private String objectId;
     private String userId;
     private String tripSerialNo;
     private String travelLocation;
     private String latitude;
     private String longitude;
     private List<TripFlow> tripFlow;
+
+    public String getObjectId() {
+        return objectId;
+    }
+
+    public void setObjectId(String objectId) {
+        this.objectId = objectId;
+    }
 
     // Getters and Setters
     public String getUserId() {

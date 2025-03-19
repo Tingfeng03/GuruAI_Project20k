@@ -2,6 +2,7 @@ package com.example.demo.model;
 
 public class ActivityContent {
 
+    private String activityId;
     private String specificLocation;
     private String address;
     private String latitude;
@@ -14,8 +15,10 @@ public class ActivityContent {
     public ActivityContent() {
     }
 
-    public ActivityContent(String specificLocation, String address, String latitude, String longitude,
+    public ActivityContent(String activityId, String specificLocation, String address, String latitude,
+            String longitude,
             String startTime, String endTime, String activityType, String notes) {
+        this.activityId = activityId;
         this.specificLocation = specificLocation;
         this.address = address;
         this.latitude = latitude;
@@ -24,6 +27,14 @@ public class ActivityContent {
         this.endTime = endTime;
         this.activityType = activityType;
         this.notes = notes;
+    }
+
+    public String getActivityId() {
+        return activityId;
+    }
+
+    public void setActivityId(String activityId) {
+        this.activityId = activityId;
     }
 
     public String getSpecificLocation() {

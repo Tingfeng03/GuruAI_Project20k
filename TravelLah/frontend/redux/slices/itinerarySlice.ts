@@ -1,59 +1,40 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+// redux/slices/itinerarySlice.ts
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface Trip {
-    id: string;
-    itinerary: {
-        tripSerialNo: string;
-        travelLocation: string;
-        latitude: number;
-        longitude: number;
-        tripFlow: { date: string; activityContent: any[] }[];
-    };
+export interface Trip {
+  id?: string;
+  userId?: string;
+  tripSerialNo?: string;
+  travelLocation?: string; // <-- lowercase if your backend returns "travelLocation"
+  latitude?: number | string;
+  longitude?: number | string;
+  startDate?: string;
+  endDate?: string;
+  tripFlow?: any[];
 }
 
 interface ItineraryState {
-    itineraries: Trip[];
-    loading: boolean;
-    error: string | null;
+  itineraries: Trip[];
 }
 
 const initialState: ItineraryState = {
-    itineraries: [],
-    loading: false,
-    error: null,
+  itineraries: [],
 };
 
-// ✅ Fix: Add `fetchItineraries` async thunk
-export const fetchItineraries = createAsyncThunk("itinerary/fetchItineraries", async () => {
-    const response = await fetch("http://localhost:8080/api/itineraries");
-    if (!response.ok) throw new Error("Failed to fetch itineraries");
-    return response.json();
-});
-
 const itinerarySlice = createSlice({
-    name: "itinerary",
-    initialState,
-    reducers: {
-        setItineraries: (state, action: PayloadAction<Trip[]>) => {
-            state.itineraries = action.payload;
-        },
+  name: "itinerary",
+  initialState,
+  reducers: {
+    // Overwrites the entire list
+    setItineraries: (state, action: PayloadAction<Trip[]>) => {
+      state.itineraries = action.payload;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchItineraries.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchItineraries.fulfilled, (state, action) => {
-                state.loading = false;
-                state.itineraries = action.payload;
-            })
-            .addCase(fetchItineraries.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message || "Failed to load itineraries";
-            });
+    // Appends a single new trip
+    addItinerary: (state, action: PayloadAction<Trip>) => {
+      state.itineraries.push(action.payload);
     },
+  },
 });
 
-export const { setItineraries } = itinerarySlice.actions;
+export const { setItineraries, addItinerary } = itinerarySlice.actions;
 export default itinerarySlice.reducer;

@@ -5,14 +5,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Linking, // 1) Import Linking from React Native
+  Linking,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Card } from "react-native-paper";
-import { weather as weatherMapping } from "../../config/weather";      // existing mapping for color/desc
-import { weatherIcons } from "../../config/weatherIcons";             // new emoji icons
+import { weather as weatherMapping } from "../../config/weather";
+import { weatherIcons } from "../../config/weatherIcons";
 
+// Updated interface: add activityId so it will be included in the JSON
 interface ActivityContent {
+  _id?: string; // to store the mongoDB ID if needed
+  activityId?: string;
   specificLocation?: string;
   address?: string;
   latitude?: number | string;
@@ -43,11 +46,8 @@ interface Trip {
 const TripDetails: React.FC = () => {
   const params = useLocalSearchParams();
   const trip: Trip | null = params.trip ? JSON.parse(params.trip as string) : null;
-
   const [expandedDays, setExpandedDays] = useState<{ [dayIndex: number]: boolean }>({});
-  const [weatherData, setWeatherData] = useState<{
-    [dayIndex: number]: { [activityIndex: number]: any };
-  }>({});
+  const [weatherData, setWeatherData] = useState<{ [dayIndex: number]: { [activityIndex: number]: any } }>({});
 
   if (!trip) {
     return (
@@ -57,17 +57,16 @@ const TripDetails: React.FC = () => {
     );
   }
 
-  // 2) Helper to open Google Maps for a specific lat/lng
+  // Open Google Maps for given lat/lng
   const openInGoogleMaps = (latitude?: string | number, longitude?: string | number) => {
     if (!latitude || !longitude) return;
     const latStr = String(latitude);
     const lngStr = String(longitude);
-    // This URL scheme opens Google Maps (or browser if Maps is unavailable):
     const url = `https://www.google.com/maps/search/?api=1&query=${latStr},${lngStr}`;
     Linking.openURL(url);
   };
 
-  // Fetch weather from Open-Meteo
+  // Fetch weather for a single activity, matching time in "YYYY-MM-DDTHH:MM" format.
   const fetchActivityWeather = async (
     latitude: string | number,
     longitude: string | number,
@@ -85,53 +84,49 @@ const TripDetails: React.FC = () => {
       }
       const data = await response.json();
 
-      // Determine which hour's weather to use
       let chosenIndex = 0;
       if (startTime) {
-        // e.g. "2025-01-01T10:00"
-        const target = `${date}T${startTime}`;
-        const idx = data.hourly.time.indexOf(target);
-        if (idx >= 0) chosenIndex = idx;
+        // Build target time string in "YYYY-MM-DDTHH:MM" format.
+        let target = `${date}T${startTime}`;
+        if (!target.match(/:\d{2}$/)) {
+          target = target + ":00";
+        }
+        const normalizedTarget = target.slice(0, 16);
+        const idx = data.hourly.time.findIndex((timeStr: string) => {
+          return timeStr.slice(0, 16) === normalizedTarget;
+        });
+        if (idx >= 0) {
+          chosenIndex = idx;
+        }
       }
 
       const weathercode = data.hourly.weather_code?.[chosenIndex];
       const temperature = data.hourly.temperature_2m?.[chosenIndex];
       const windspeed = data.hourly.windspeed_10m?.[chosenIndex];
 
-      return {
-        weathercode,
-        temperature,
-        windspeed,
-      };
+      return { weathercode, temperature, windspeed };
     } catch (error) {
       console.error("Error fetching weather:", error);
       return null;
     }
   };
 
-  // Expand/collapse day
   const toggleExpand = async (dayIndex: number, dayItem: TripFlow) => {
     setExpandedDays((prev) => ({
       ...prev,
       [dayIndex]: !prev[dayIndex],
     }));
 
-    // If newly expanded, fetch weather
     if (!expandedDays[dayIndex] && dayItem.activityContent) {
       try {
         const dayWeathers: { [activityIndex: number]: any } = {};
-
         const promises = dayItem.activityContent.map(async (activity, aIndex) => {
           const { latitude, longitude, startTime } = activity;
-          if (!latitude || !longitude || !dayItem.date) {
-            return null;
-          }
-          // fetch for this activity
+          if (!latitude || !longitude || !dayItem.date) return null;
           const w = await fetchActivityWeather(latitude, longitude, dayItem.date, startTime);
           dayWeathers[aIndex] = w;
           return w;
         });
-
         await Promise.all(promises);
         setWeatherData((prev) => ({
           ...prev,
@@ -143,6 +138,40 @@ const TripDetails: React.FC = () => {
     }
   };
 
+  // Recalibrate button handler:
+  // Now includes trip id and the date from the trip flow.
+  const handleRecalibrate = async (
+    tripId: string,
+    date: string,
+    activity: ActivityContent,
+    dayIndex: number,
+    activityIndex: number
+  ) => {
+    try {
+      const payload = {
+        tripId: tripId,
+        date: date,
+        // activityId: activity.activityId,
+        ...activity,
+      };
+      console.log("Sending activity for recalibration:", payload);
+
+      const recalibrateURL = "http://localhost:8000/updateActivity";
+      const response = await fetch(recalibrateURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error(`Recalibration error: ${response.statusText}`);
+      }
+      const updatedActivity = await response.json();
+      console.log("Recalibrated activity:", updatedActivity);
+    } catch (error) {
+      console.error("Error recalibrating activity:", error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{trip.travelLocation || "Unknown Location"}</Text>
@@ -150,7 +179,6 @@ const TripDetails: React.FC = () => {
       <Text style={styles.subtitle}>
         Dates: {trip.startDate || "??"} - {trip.endDate || "??"}
       </Text>
-
       {(!trip.tripFlow || trip.tripFlow.length === 0) ? (
         <Text style={styles.warningText}>No trip itinerary found.</Text>
       ) : (
@@ -169,7 +197,6 @@ const TripDetails: React.FC = () => {
                   </Card.Content>
                 </Card>
               </TouchableOpacity>
-
               {expandedDays[dayIndex] && (
                 <FlatList
                   data={dayItem.activityContent}
@@ -177,18 +204,13 @@ const TripDetails: React.FC = () => {
                   renderItem={({ item: activity, index: aIndex }) => {
                     const wData = weatherData[dayIndex]?.[aIndex];
                     const code = wData?.weathercode;
-                    // Convert code to string
                     const codeStr = code !== undefined ? String(code) : "";
-                    // The text-based details from weatherMapping
                     const mapping =
                       codeStr in weatherMapping
                         ? weatherMapping[codeStr as keyof typeof weatherMapping]
                         : null;
-
                     const weatherDesc = mapping?.description || "Unknown";
                     const weatherColor = mapping?.style?.color || "#000";
-
-                    // The emoji icon from weatherIcons (already in your code)
                     const icon = weatherIcons[codeStr] || "❓";
 
                     return (
@@ -209,11 +231,8 @@ const TripDetails: React.FC = () => {
                           <Text style={styles.notes}>
                             {activity.notes || "No details provided"}
                           </Text>
-
-                          {/* Show weather details if any */}
                           {wData && (
                             <View style={{ marginTop: 8 }}>
-                              {/* Weather icon + description */}
                               <Text style={[styles.weatherRow, { color: weatherColor }]}>
                                 {icon}  {weatherDesc}
                               </Text>
@@ -221,13 +240,17 @@ const TripDetails: React.FC = () => {
                               <Text>Windspeed: {wData.windspeed} m/s</Text>
                             </View>
                           )}
-
-                          {/* 3) "Open in Google Maps" button */}
                           <TouchableOpacity
                             style={styles.mapButton}
                             onPress={() => openInGoogleMaps(activity.latitude, activity.longitude)}
                           >
                             <Text style={styles.mapButtonText}>Open in Google Maps</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.recalibrateButton}
+                            onPress={() => handleRecalibrate(trip.id, dayItem.date || "", activity, dayIndex, aIndex)}
+                          >
+                            <Text style={styles.recalibrateButtonText}>Regenerate Activity</Text>
                           </TouchableOpacity>
                         </Card.Content>
                       </Card>
@@ -250,12 +273,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 16, color: "red", textAlign: "center", marginTop: 20 },
   warningText: { fontSize: 14, color: "orange", textAlign: "center", marginTop: 10 },
   dayContainer: { marginBottom: 12 },
-  dayCard: {
-    backgroundColor: "#f8f8f8",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
+  dayCard: { backgroundColor: "#f8f8f8", borderRadius: 8, padding: 12, marginBottom: 8 },
   date: { fontSize: 18, fontWeight: "bold", color: "#333" },
   activityCount: { fontSize: 14, color: "#666" },
   activityCard: {
@@ -272,10 +290,7 @@ const styles = StyleSheet.create({
   activityTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 4, color: "#333" },
   activityText: { fontSize: 14, color: "#555", marginBottom: 2 },
   notes: { fontSize: 12, color: "#777", marginTop: 4 },
-  weatherRow: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  weatherRow: { fontSize: 16, fontWeight: "bold" },
   mapButton: {
     marginTop: 10,
     backgroundColor: "#4285F4",
@@ -284,10 +299,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignSelf: "flex-start",
   },
-  mapButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  mapButtonText: { color: "#fff", fontWeight: "bold" },
+  recalibrateButton: {
+    marginTop: 10,
+    backgroundColor: "#FF8C00",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    alignSelf: "flex-start",
   },
+  recalibrateButtonText: { color: "#fff", fontWeight: "bold" },
 });
 
 export default TripDetails;

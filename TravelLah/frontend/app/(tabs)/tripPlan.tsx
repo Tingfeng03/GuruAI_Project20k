@@ -1,48 +1,52 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { Card, Text } from "react-native-paper";
 import { useRouter } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { setItineraries } from "../../redux/slices/itinerarySlice";
+import { RootState } from "../../redux/store";
+
+const getMapImageURL = (lat?: number | string, lng?: number | string) => {
+  if (lat == null || lng == null) return null;
+  return `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=15&l=map&size=600,300`;
+};
 
 interface Trip {
   id: string;
   userId?: string;
   tripSerialNo?: string;
   travelLocation?: string;
-  latitude?: number;
-  longitude?: number;
-  "startDate"?: string;
-  "endDate"?: string;
-  tripFlow?: { date: string; activityContent: any[] }[];
+  latitude?: number | string;
+  longitude?: number | string;
+  startDate?: string;
+  endDate?: string;
+  tripFlow?: any[];
 }
 
-const getMapImageURL = (lat?: number, lng?: number) => {
-  if (lat == null || lng == null) return null;
-  return `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=15&l=map&size=600,300`;
-};
-
 const TripPlan: React.FC = () => {
-  const [itineraries, setItineraries] = useState<Trip[]>([]);
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  // Retrieve itineraries from the Redux Provider
+  const itineraries = useSelector((state: RootState) => state.itinerary.itineraries) as Trip[];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch("http://localhost:8080/api/tripplans");
-        const data: Trip[] = await response.json();
-        setItineraries(data);
-
-        console.log("DATTAAAAA:", data);
+        const data = await response.json();
+        dispatch(setItineraries(data));
+        console.log("Fetched Itineraries:", data);
       } catch (error) {
         console.error("Error fetching itinerary:", error);
       }
     };
     fetchData();
-  }, []);
+  }, [dispatch]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your Upcoming Trips</Text>
-
       {itineraries.length === 0 ? (
         <Text style={styles.noTrips}>No trips found</Text>
       ) : (
@@ -73,8 +77,7 @@ const TripPlan: React.FC = () => {
                       📍 {item.travelLocation || "Unknown Location"}
                     </Text>
                     <Text>
-                      {/* If you store start/end date in top-level fields */}
-                      📅 {item["startDate"] || "??"} - {item["endDate"] || "??"}
+                      📅 {item.startDate || "??"} - {item.endDate || "??"}
                     </Text>
                   </Card.Content>
                 </Card>
